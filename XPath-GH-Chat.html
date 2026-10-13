@@ -1,0 +1,537 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>XPath-GH-Chat</title>
+<style>
+:root{--bg:#f3f5f4;--panel:#fff;--ink:#1d2624;--mute:#6b7774;--line:#d5dcda;--acc:#0f6b5c;--accink:#fff;--me:#dcefe9;--err:#b3261e;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141918;--panel:#1c2321;--ink:#e4ebe9;--mute:#8a9895;--line:#2e3836;--acc:#4fc3ad;--accink:#0b1f1b;--me:#21403a;--err:#f2b8b5}}
+:root[data-theme="dark"]{--bg:#141918;--panel:#1c2321;--ink:#e4ebe9;--mute:#8a9895;--line:#2e3836;--acc:#4fc3ad;--accink:#0b1f1b;--me:#21403a;--err:#f2b8b5}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:15px/1.5 "Segoe UI",system-ui,sans-serif}
+main{display:grid;grid-template-columns:1fr 1fr;gap:12px;height:100%;padding:12px}
+section{background:var(--panel);border:1px solid var(--line);border-radius:8px;display:flex;flex-direction:column;min-height:0;min-width:0}
+h2{margin:0;padding:10px 14px;font-size:15px;font-weight:600;border-bottom:1px solid var(--line)}
+#log{flex:1;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:8px}
+.msg{max-width:90%;padding:8px 12px;border-radius:8px;white-space:pre-wrap;word-break:break-word;font-family:Consolas,"Courier New",monospace;font-size:13.5px}
+.me{align-self:flex-end;background:var(--me)}
+.bot{align-self:flex-start;border:1px solid var(--line)}
+.bot.err{color:var(--err)}
+.hint{color:var(--mute);font-family:inherit;font-size:14px}
+.msg .body{display:block}
+.msg.collapsed .body{max-height:calc(10 * 1.5em);overflow:hidden}
+.tog{display:block;margin-top:6px;padding:2px 10px;font-size:12.5px}
+section.drop{outline:2px dashed var(--acc);outline-offset:-6px}
+form{display:flex;gap:8px;padding:10px;border-top:1px solid var(--line)}
+input[type=text]{flex:1;min-width:0;padding:9px 11px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);font:13.5px Consolas,"Courier New",monospace}
+button{padding:8px 16px;border-radius:6px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font:inherit;cursor:pointer}
+button.primary{background:var(--acc);color:var(--accink);border-color:var(--acc)}
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.bar{display:flex;gap:8px;padding:10px 14px;border-bottom:1px solid var(--line);align-items:center}
+.bar span{margin-left:auto;color:var(--mute);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#xml{flex:1;margin:10px;padding:10px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);font:13px/1.45 Consolas,"Courier New",monospace;resize:none;min-height:0}
+.tabs{display:flex;gap:4px;padding:8px 10px 0;border-bottom:1px solid var(--line)}
+.tab{border:1px solid transparent;border-bottom:none;border-radius:6px 6px 0 0;padding:6px 14px;background:transparent;color:var(--mute);margin-bottom:-1px}
+.tab[aria-selected="true"]{background:var(--panel);color:var(--ink);border-color:var(--line);border-bottom:1px solid var(--panel);font-weight:600}
+.pane{flex:1;min-height:0;display:flex;flex-direction:column}
+.pane[hidden]{display:none}
+#struct{overflow:auto;padding:12px 14px}
+#struct h3{margin:14px 0 6px;font-size:14px}
+#struct h3:first-child{margin-top:0}
+#struct table{border-collapse:collapse;font:13px Consolas,"Courier New",monospace}
+#struct td{padding:2px 14px 2px 0}
+#struct td.n{text-align:right;color:var(--mute)}
+#struct ul{margin:0;padding:0;list-style:none;font:13px/1.6 Consolas,"Courier New",monospace}
+#struct .hint{color:var(--mute)}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+#elems{overflow:auto;padding:12px 14px}
+#elems h3{margin:0 0 6px;font-size:14px}
+#elems table{border-collapse:collapse;font:13px Consolas,"Courier New",monospace}
+#elems td{padding:2px 14px 2px 0}
+#elems td.n{text-align:right;color:var(--mute)}
+#elems .hint{color:var(--mute)}
+.chead{display:flex;align-items:center;gap:8px;padding-right:10px;border-bottom:1px solid var(--line)}
+.chead h2{flex:1;border-bottom:none}
+.chead button{padding:5px 10px;font-size:13px}
+.chead{flex-wrap:wrap}
+.chead button{margin:4px 0}
+.bar{flex-wrap:wrap}
+button:disabled{opacity:.5;cursor:not-allowed}
+#gh{overflow:auto;padding:12px 14px}
+#gh label{display:block;margin:10px 0 3px;font-size:13.5px}
+#gh input[type=text],#gh input[type=password]{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);font:13px Consolas,"Courier New",monospace}
+#gh .chk{display:flex;gap:8px;align-items:center;margin-top:10px}
+#gh .chk label{margin:0}
+#gh .row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+#gh .note{color:var(--mute);font-size:13px;margin:12px 0 0;max-width:62ch}
+.status{margin-top:12px;font-size:13.5px;min-height:1.5em}
+.status.ok{color:var(--acc)}
+.status.err{color:var(--err)}
+dialog{border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink);padding:16px;width:min(460px,92vw)}
+dialog::backdrop{background:rgba(0,0,0,.4)}
+dialog h3{margin:0 0 10px;font-size:15px}
+dialog label{display:block;margin:8px 0 3px;font-size:13.5px}
+dialog input[type=text]{width:100%}
+dialog .list{max-height:260px;overflow:auto;border:1px solid var(--line);border-radius:6px;padding:6px 10px;margin-top:8px}
+dialog .list label{display:flex;gap:8px;align-items:center;margin:0;padding:3px 0;font:13px Consolas,"Courier New",monospace}
+dialog .list .sz{margin-left:auto;color:var(--mute)}
+dialog .row{display:flex;gap:8px;margin-top:14px}
+dialog .sp{flex:1}
+@media (max-width:720px){main{grid-template-columns:1fr;grid-template-rows:1fr 1fr}}
+</style>
+</head>
+<body>
+<main>
+  <section aria-label="XPath-Chat">
+    <div class="chead">
+      <h2>XPath-Abfrage</h2>
+      <button id="exp" type="button">Als .md exportieren</button>
+      <button id="expgh" type="button" disabled title="Erst im Tab „GitHub“ verbinden.">Nach GitHub</button>
+      <button id="clr" type="button">Chat leeren</button>
+    </div>
+    <div id="log" aria-live="polite"></div>
+    <form id="f">
+      <input type="text" id="q" placeholder="XPath eingeben, z. B. //item/@id" autocomplete="off" spellcheck="false">
+      <button class="primary" type="submit">Senden</button>
+    </form>
+  </section>
+  <section aria-label="XML">
+    <div class="bar">
+      <button id="clear" type="button">Clear</button>
+      <button id="import" type="button" class="primary">Import</button>
+      <button id="impgh" type="button" disabled title="Erst im Tab „GitHub“ verbinden.">GitHub-Import</button>
+      <span id="fname">Keine Datei geladen</span>
+      <input type="file" id="file" multiple accept=".xml,text/xml,application/xml" hidden>
+    </div>
+    <div class="tabs" role="tablist">
+      <button type="button" class="tab" role="tab" id="t1" aria-selected="true" aria-controls="p1">XML</button>
+      <button type="button" class="tab" role="tab" id="t2" aria-selected="false" aria-controls="p2">Struktur</button>
+      <button type="button" class="tab" role="tab" id="t3" aria-selected="false" aria-controls="p3">XML-Elemente</button>
+      <button type="button" class="tab" role="tab" id="t4" aria-selected="false" aria-controls="p4">GitHub</button>
+    </div>
+    <div class="pane" id="p1" role="tabpanel" aria-labelledby="t1">
+      <textarea id="xml" readonly placeholder="Importierte XML-Datei erscheint hier."></textarea>
+    </div>
+    <div class="pane" id="p2" role="tabpanel" aria-labelledby="t2" hidden>
+      <div id="struct"></div>
+    </div>
+    <div class="pane" id="p3" role="tabpanel" aria-labelledby="t3" hidden>
+      <div id="elems"></div>
+    </div>
+    <div class="pane" id="p4" role="tabpanel" aria-labelledby="t4" hidden>
+      <div id="gh">
+        <label for="ghrepo">Repository (Besitzer/Name)</label>
+        <input type="text" id="ghrepo" placeholder="meinname/xpath-daten" autocomplete="off" spellcheck="false">
+        <label for="ghfolder">Ordner im Repository (leer = Hauptebene)</label>
+        <input type="text" id="ghfolder" placeholder="xpath-chat" autocomplete="off" spellcheck="false">
+        <label for="ghbranch">Branch (leer = Standard-Branch)</label>
+        <input type="text" id="ghbranch" autocomplete="off" spellcheck="false">
+        <label for="ghtoken">Zugriffstoken</label>
+        <input type="password" id="ghtoken" autocomplete="off" spellcheck="false">
+        <div class="chk"><input type="checkbox" id="ghkeep"><label for="ghkeep">Token in diesem Browser merken (localStorage)</label></div>
+        <div class="row">
+          <button id="ghsave" type="button" class="primary">Speichern und testen</button>
+          <button id="ghforget" type="button">Token vergessen</button>
+        </div>
+        <div class="status" id="ghstatus" role="status"></div>
+        <p class="note">Lege in GitHub unter Settings, Developer settings ein „Fine-grained personal access token“ an: nur für dieses eine Repository, Berechtigung „Contents: Read and write“, mit Ablaufdatum. Nutze ein privates Repository für die Daten, denn in einem öffentlichen wären sie für alle lesbar. Importiert werden die .xml-Dateien des Ordners, exportierte Chats landen als .md im selben Ordner. Ohne Merken gilt das Token nur für diesen Tab.</p>
+      </div>
+    </div>
+  </section>
+</main>
+<dialog id="dimp">
+  <h3>Aus GitHub laden</h3>
+  <div class="status" id="dimpinfo"></div>
+  <div class="list" id="dimplist"></div>
+  <div class="row">
+    <button id="dimpall" type="button">Alle auswählen</button>
+    <span class="sp"></span>
+    <button id="dimpcancel" type="button">Abbrechen</button>
+    <button id="dimpok" type="button" class="primary" disabled>Laden</button>
+  </div>
+</dialog>
+<dialog id="dexp">
+  <h3>Chat nach GitHub exportieren</h3>
+  <div id="dexptarget" class="status"></div>
+  <label for="dexpname">Dateiname</label>
+  <input type="text" id="dexpname" autocomplete="off" spellcheck="false">
+  <div class="status" id="dexpinfo"></div>
+  <div class="row">
+    <span class="sp"></span>
+    <button id="dexpcancel" type="button">Abbrechen</button>
+    <button id="dexpok" type="button" class="primary">Speichern</button>
+  </div>
+</dialog>
+<script>
+(function(){
+  var log=document.getElementById('log'),q=document.getElementById('q'),xml=document.getElementById('xml'),
+      file=document.getElementById('file'),fname=document.getElementById('fname'),doc=null,msgs=[],history=loadHist(),hi=0,draft='',tabMatches=null,tabIdx=0,tabBase='';
+
+  var HKEY='xpathchat.history',HMAX=200;
+  function loadHist(){
+    try{var a=JSON.parse(localStorage.getItem('xpathchat.history')||'[]');
+      return Array.isArray(a)?a.filter(function(x){return typeof x==='string'&&x;}).slice(-200):[];}
+    catch(e){return [];}
+  }
+  function pushHist(x){
+    history=history.filter(function(h){return h!==x;});history.push(x);
+    if(history.length>HMAX)history=history.slice(-HMAX);
+    try{localStorage.setItem(HKEY,JSON.stringify(history));}catch(e){}
+  }
+
+  function add(text,cls){
+    var d=document.createElement('div'),lines=text.split('\n').length;
+    if(cls.indexOf('hint')<0)msgs.push({text:text,cls:cls});
+    d.className='msg '+cls;
+    if(cls.indexOf('bot')>-1&&cls.indexOf('hint')<0&&lines>10){
+      d.classList.add('collapsed');
+      var b=document.createElement('span');b.className='body';b.textContent=text;d.appendChild(b);
+      var t=document.createElement('button');t.type='button';t.className='tog';t.textContent='Aufklappen ('+(lines-10)+' weitere Zeilen)';
+      t.onclick=function(){
+        var c=d.classList.toggle('collapsed');
+        t.textContent=c?'Aufklappen ('+(lines-10)+' weitere Zeilen)':'Zusammenklappen';
+      };
+      d.appendChild(t);
+    }else d.textContent=text;
+    log.appendChild(d);log.scrollTop=log.scrollHeight;
+  }
+  function hint(){add('Importiere rechts eine XML-Datei und gib dann XPath-Ausdrücke ein.','bot hint');}
+  hint();
+
+  document.getElementById('import').onclick=function(){file.click();};
+
+  function selectTab(n){
+    [1,2,3,4].forEach(function(i){
+      document.getElementById('t'+i).setAttribute('aria-selected',i===n?'true':'false');
+      document.getElementById('p'+i).hidden=(i!==n);
+    });
+  }
+  [1,2,3,4].forEach(function(i){document.getElementById('t'+i).onclick=function(){selectTab(i);};});
+
+  function renderStructure(){
+    var el=document.getElementById('struct'),el2=document.getElementById('elems');
+    el.textContent='';el2.textContent='';
+    function hint(box,t){var m=document.createElement('p');m.className='hint';m.textContent=t;box.appendChild(m);}
+    if(!doc){hint(el,'Kein XML geladen.');hint(el2,'Kein XML geladen.');return;}
+    var nodes={},leaves={},paths={},root=doc.documentElement;
+    (function walk(n,path){
+      var kids=Array.prototype.filter.call(n.childNodes,function(c){return c.nodeType===1;});
+      var target=kids.length?nodes:leaves;
+      target[n.nodeName]=(target[n.nodeName]||0)+1;
+      if(n!==root&&kids.length)paths[path]=1;
+      kids.forEach(function(k){walk(k,n===root?k.nodeName:path+'.'+k.nodeName);});
+    })(root,'');
+    var cmp=function(a,b){return a.localeCompare(b);};
+
+    // Tab "Struktur": Pfade
+    var pl=Object.keys(paths).sort(cmp);
+    var h=document.createElement('h3');h.textContent='Pfade von Knoten mit Kindern ('+pl.length+')';el.appendChild(h);
+    if(!pl.length)hint(el,'Keine.');
+    else{var ul=document.createElement('ul');pl.forEach(function(k){var li=document.createElement('li');li.textContent=k;ul.appendChild(li);});el.appendChild(ul);}
+
+    // Tab "XML-Elemente": Nodes und Leafes nebeneinander
+    var cols=document.createElement('div');cols.className='cols';
+    function col(title,map){
+      var d=document.createElement('div'),names=Object.keys(map).sort(cmp),h3=document.createElement('h3');
+      h3.textContent=title+' ('+names.length+')';d.appendChild(h3);
+      if(!names.length)hint(d,'Keine.');
+      else{
+        var tb=document.createElement('table');
+        names.forEach(function(k){var tr=tb.insertRow(),a=tr.insertCell(),b=tr.insertCell();a.textContent=k;b.textContent=map[k];b.className='n';});
+        d.appendChild(tb);
+      }
+      cols.appendChild(d);
+    }
+    col('Nodes',nodes);col('Leafes',leaves);
+    el2.appendChild(cols);
+  }
+  renderStructure();
+
+  function readText(f){if(typeof f.text==='string')return Promise.resolve(f.text);return new Promise(function(res){var r=new FileReader();r.onload=function(){res(r.result);};r.readAsText(f);});}
+  function load(files){
+    files=Array.prototype.slice.call(files);
+    Promise.all(files.map(readText)).then(function(texts){
+      var ok=[],i;
+      for(i=0;i<files.length;i++){
+        var p=new DOMParser().parseFromString(texts[i],'application/xml'),e=p.getElementsByTagName('parsererror')[0];
+        if(e)add('Fehler beim Parsen von '+files[i].name+':\n'+e.textContent.trim(),'bot err');
+        else ok.push({name:files[i].name,text:texts[i],doc:p});
+      }
+      if(!ok.length){doc=null;renderStructure();xml.value=texts.join('\n\n');fname.textContent=files.length+' Dateien (ungültig)';return;}
+      var base=ok[0].doc,root=base.documentElement,merged=[ok[0].name],skipped=[];
+      for(i=1;i<ok.length;i++){
+        var r2=ok[i].doc.documentElement;
+        if(r2.localName===root.localName&&r2.namespaceURI===root.namespaceURI){
+          Array.prototype.forEach.call(r2.childNodes,function(n){root.appendChild(base.importNode(n,true));});
+          merged.push(ok[i].name);
+        }else skipped.push(ok[i].name+' (<'+r2.nodeName+'>)');
+      }
+      doc=base;renderStructure();
+      if(merged.length===1){xml.value=ok[0].text;fname.textContent=merged[0];
+        add(merged[0]+' geladen (Wurzelelement: '+root.nodeName+').','bot');}
+      else{xml.value=new XMLSerializer().serializeToString(base);fname.textContent=merged.length+' Dateien verkettet';
+        add(merged.length+' Dateien unter <'+root.nodeName+'> verkettet:\n'+merged.join('\n'),'bot');}
+      if(skipped.length)add('Übersprungen, anderes Wurzelelement als <'+root.nodeName+'>:\n'+skipped.join('\n'),'bot err');
+    });
+  }
+  file.onchange=function(){if(file.files.length)load(file.files);file.value='';};
+
+  var zone=document.querySelector('section[aria-label="XML"]'),depth=0;
+  function hasFiles(e){return e.dataTransfer&&Array.prototype.indexOf.call(e.dataTransfer.types||[],'Files')>-1;}
+  window.addEventListener('dragenter',function(e){if(hasFiles(e)){e.preventDefault();depth++;zone.classList.add('drop');}});
+  window.addEventListener('dragover',function(e){if(hasFiles(e))e.preventDefault();});
+  window.addEventListener('dragleave',function(e){if(hasFiles(e)&&--depth<=0){depth=0;zone.classList.remove('drop');}});
+  window.addEventListener('drop',function(e){
+    if(!hasFiles(e))return;
+    e.preventDefault();depth=0;zone.classList.remove('drop');
+    if(e.dataTransfer.files.length)load(e.dataTransfer.files);
+  });
+  document.getElementById('clear').onclick=function(){
+    doc=null;renderStructure();xml.value='';fname.textContent='Keine Datei geladen';add('Geladenes XML entfernt.','bot');
+  };
+
+  function fmt(n){
+    if(n.nodeType===1)return new XMLSerializer().serializeToString(n);
+    if(n.nodeType===2)return n.name+'="'+n.value+'"';
+    return n.nodeValue;
+  }
+  function run(expr){
+    var R=XPathResult,r=doc.evaluate(expr,doc,doc.createNSResolver(doc.documentElement),R.ANY_TYPE,null);
+    switch(r.resultType){
+      case R.NUMBER_TYPE:return String(r.numberValue);
+      case R.STRING_TYPE:return r.stringValue;
+      case R.BOOLEAN_TYPE:return String(r.booleanValue);
+    }
+    var out=[],n;while((n=r.iterateNext()))out.push(fmt(n));
+    return out.length?out.length+' Treffer:\n'+out.map(function(s,i){return '['+(i+1)+'] '+s;}).join('\n'):'Keine Treffer.';
+  }
+  document.getElementById('f').onsubmit=function(ev){
+    ev.preventDefault();
+    var expr=q.value.trim(); if(!expr)return;
+    pushHist(expr);hi=history.length;draft='';tabMatches=null;q.value='';
+    add(expr,'me');
+    if(!doc){add('Noch keine gültige XML-Datei geladen. Bitte zuerst importieren.','bot err');return;}
+    try{add(run(expr),'bot');}catch(e){add('Ungültiger XPath-Ausdruck: '+e.message,'bot err');}
+  };
+  function caretEnd(){var n=q.value.length;q.setSelectionRange(n,n);}
+  q.addEventListener('input',function(){tabMatches=null;hi=history.length;draft=q.value;});
+  q.addEventListener('keydown',function(e){
+    if(e.key==='ArrowUp'){
+      if(hi>0){if(hi===history.length)draft=q.value;hi--;q.value=history[hi];tabMatches=null;}
+      e.preventDefault();setTimeout(caretEnd,0);
+    }else if(e.key==='ArrowDown'){
+      if(hi<history.length){hi++;q.value=hi===history.length?draft:history[hi];tabMatches=null;}
+      e.preventDefault();setTimeout(caretEnd,0);
+    }else if(e.key==='Tab'&&!e.shiftKey&&!e.ctrlKey&&!e.altKey&&!e.metaKey){
+      if(!tabMatches){
+        tabBase=q.value;
+        tabMatches=history.slice().reverse().filter(function(h){return h.indexOf(tabBase)===0&&h!==tabBase;});
+        tabIdx=0;
+      }else tabIdx=(tabIdx+1)%tabMatches.length;
+      if(!tabMatches.length){tabMatches=null;return;}
+      e.preventDefault();
+      q.value=tabMatches[tabIdx];caretEnd();
+    }
+  });
+
+  document.getElementById('clr').onclick=function(){
+    log.innerHTML='';msgs=[];hint();
+  };
+  function fence(t,lang){var f='```';while(t.indexOf(f)>-1)f+='`';return f+(lang||'')+'\n'+t+'\n'+f;}
+  function pad(n){return (n<10?'0':'')+n;}
+  function buildMd(){
+    var d=new Date(),md='# XPath-Chat\n\nExportiert: '+d.toLocaleString('de-DE')+'  \nGeladene Datei: '+fname.textContent+'\n';
+    msgs.forEach(function(m){
+      if(m.cls==='me')md+='\n## Eingabe\n\n'+fence(m.text,'xpath')+'\n';
+      else md+='\n'+(m.cls.indexOf('err')>-1?'**Fehler:**':'**Antwort:**')+'\n\n'+fence(m.text,'text')+'\n';
+    });
+    return md;
+  }
+  document.getElementById('exp').onclick=async function(){
+    if(!msgs.length){add('Der Chat ist leer, es gibt nichts zu exportieren.','bot hint');return;}
+    var d=new Date(),name='xpath-chat-'+d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'-'+pad(d.getHours())+pad(d.getMinutes())+'.md',
+        md=buildMd(),dl=null;
+    try{dl=await window.claude.use('downloads');}catch(e){dl=null;}
+    if(dl){
+      try{await dl.save({filename:name,data:md});add('Chat als '+name+' exportiert.','bot hint');}
+      catch(e){if(!e||e.code!=='declined')add('Export nicht möglich ('+((e&&e.code)||'Fehler')+').','bot err hint');}
+      return;
+    }
+    try{ // Fallback außerhalb von claude.ai
+      var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([md],{type:'text/markdown'}));
+      a.download=name;document.body.appendChild(a);a.click();a.remove();
+    }catch(e){add('Export hier nicht verfügbar.','bot err hint');}
+  };
+
+  /* ===== GitHub-Speicher ===== */
+  /*GH-API-START*/
+  var gh={repo:'',folder:'xpath-chat',branch:'',token:'',keep:false,ok:false};
+  function ghErr(code,msg){var e=new Error(msg);e.code=code;return e;}
+  function ghDir(){return String(gh.folder||'').replace(/^\/+|\/+$/g,'');}
+  function ghPath(name){var d=ghDir();return d?d+'/'+name:name;}
+  function ghUrl(path){
+    var u='https://api.github.com/repos/'+gh.repo+'/contents'+(path?'/'+path.split('/').map(encodeURIComponent).join('/'):'');
+    return gh.branch?u+'?ref='+encodeURIComponent(gh.branch):u;
+  }
+  async function ghFetch(url,opts){
+    opts=opts||{};
+    var h={'Accept':opts.accept||'application/vnd.github+json'};
+    if(gh.token)h.Authorization='Bearer '+gh.token;
+    if(opts.body)h['Content-Type']='application/json';
+    var r;
+    try{r=await fetch(url,{method:opts.method||'GET',headers:h,body:opts.body,cache:'no-store'});}
+    catch(e){throw ghErr('network','GitHub nicht erreichbar (Netzwerk, oder diese Umgebung blockiert Verbindungen zu api.github.com).');}
+    if(r.ok)return r;
+    var m='';try{m=(await r.json()).message||'';}catch(e){}
+    if(r.status===401)throw ghErr(401,'Token ungültig oder abgelaufen.');
+    if(r.status===403)throw ghErr(403,'Zugriff verweigert oder Limit erreicht'+(m?' ('+m+')':'')+'.');
+    if(r.status===404)throw ghErr(404,'Nicht gefunden. Prüfe Repository, Ordner und Branch und ob das Token Zugriff auf dieses Repository hat.');
+    if(r.status===409||r.status===422)throw ghErr(r.status,'Konflikt beim Schreiben'+(m?' ('+m+')':'')+'. Bitte erneut versuchen.');
+    throw ghErr(r.status,'GitHub-Fehler '+r.status+(m?': '+m:'')+'.');
+  }
+  function b64(text){
+    var b=new TextEncoder().encode(text),s='',i;
+    for(i=0;i<b.length;i+=0x8000)s+=String.fromCharCode.apply(null,b.subarray(i,i+0x8000));
+    return btoa(s);
+  }
+  async function ghList(){
+    try{
+      var j=await (await ghFetch(ghUrl(ghDir()))).json();
+      return Array.isArray(j)?j.filter(function(x){return x.type==='file';}):[];
+    }catch(e){if(e.code===404)return [];throw e;}
+  }
+  async function ghRead(path){return (await ghFetch(ghUrl(path),{accept:'application/vnd.github.raw+json'})).text();}
+  async function ghExists(path){
+    try{
+      var j=await (await ghFetch(ghUrl(path))).json();
+      if(Array.isArray(j))throw ghErr('dir','Der Name gehört zu einem Ordner im Repository.');
+      return j;
+    }catch(e){if(e.code===404)return null;throw e;}
+  }
+  async function ghWrite(path,text,sha){
+    var body={message:'XPath-GH-Chat: '+path.split('/').pop(),content:b64(text)};
+    if(gh.branch)body.branch=gh.branch;
+    if(sha)body.sha=sha;
+    await ghFetch(ghUrl(path).split('?')[0],{method:'PUT',body:JSON.stringify(body)});
+  }
+  /*GH-API-END*/
+
+  var ghEl={repo:document.getElementById('ghrepo'),folder:document.getElementById('ghfolder'),branch:document.getElementById('ghbranch'),
+    token:document.getElementById('ghtoken'),keep:document.getElementById('ghkeep'),status:document.getElementById('ghstatus')};
+  function ghStatus(t,c){ghEl.status.textContent=t;ghEl.status.className='status'+(c?' '+c:'');}
+  function ghUpdateButtons(){
+    ['impgh','expgh'].forEach(function(id){
+      var b=document.getElementById(id);b.disabled=!gh.ok;
+      b.title=gh.ok?'':'Erst im Tab „GitHub“ verbinden.';
+    });
+  }
+  function ghLoadCfg(){
+    try{var c=JSON.parse(localStorage.getItem('xpathghchat.cfg')||'{}');
+      gh.repo=c.repo||'';gh.folder=c.folder==null?'xpath-chat':c.folder;gh.branch=c.branch||'';gh.keep=!!c.keep;}catch(e){}
+    try{gh.token=(gh.keep?localStorage.getItem('xpathghchat.token'):sessionStorage.getItem('xpathghchat.token'))||'';}catch(e){}
+  }
+  function ghSaveCfg(){
+    try{localStorage.setItem('xpathghchat.cfg',JSON.stringify({repo:gh.repo,folder:gh.folder,branch:gh.branch,keep:gh.keep}));}catch(e){}
+    try{
+      localStorage.removeItem('xpathghchat.token');sessionStorage.removeItem('xpathghchat.token');
+      if(gh.token)(gh.keep?localStorage:sessionStorage).setItem('xpathghchat.token',gh.token);
+    }catch(e){}
+  }
+  function ghFill(){
+    ghEl.repo.value=gh.repo;ghEl.folder.value=gh.folder;ghEl.branch.value=gh.branch;ghEl.keep.checked=gh.keep;ghEl.token.value='';
+    ghEl.token.placeholder=gh.token?'gespeichert (leer lassen, um es zu behalten)':'github_pat_…';
+  }
+  async function ghConnect(){
+    gh.ok=false;ghUpdateButtons();
+    if(!/^[\w.-]+\/[\w.-]+$/.test(gh.repo)){ghStatus('Repository im Format Besitzer/Name angeben.','err');return;}
+    if(!gh.token){ghStatus('Token fehlt.','err');return;}
+    ghStatus('Prüfe Verbindung …','');
+    try{
+      var j=await (await ghFetch('https://api.github.com/repos/'+gh.repo)).json();
+      gh.ok=true;ghUpdateButtons();
+      if(j.permissions&&j.permissions.push===false)ghStatus('Verbunden mit '+j.full_name+', aber das Token hat nur Leserechte. Exportieren wird fehlschlagen.','err');
+      else if(!j.private)ghStatus('Verbunden mit '+j.full_name+'. ACHTUNG: Das Repository ist öffentlich, gespeicherte Dateien wären für alle lesbar.','err');
+      else ghStatus('Verbunden mit '+j.full_name+' (privat).','ok');
+    }catch(e){ghStatus(e.message,'err');}
+  }
+  document.getElementById('ghsave').onclick=function(){
+    gh.repo=ghEl.repo.value.trim();gh.folder=ghEl.folder.value.trim();gh.branch=ghEl.branch.value.trim();gh.keep=ghEl.keep.checked;
+    if(ghEl.token.value.trim())gh.token=ghEl.token.value.trim();
+    ghSaveCfg();ghFill();ghConnect();
+  };
+  document.getElementById('ghforget').onclick=function(){
+    gh.token='';gh.ok=false;ghSaveCfg();ghFill();ghUpdateButtons();ghStatus('Token entfernt.','');
+  };
+  function openDlg(d){if(d.showModal)d.showModal();else d.setAttribute('open','');}
+  function closeDlg(d){if(d.close)d.close();else d.removeAttribute('open');}
+  function setInfo(id,t,c){var e=document.getElementById(id);e.textContent=t;e.className='status'+(c?' '+c:'');}
+
+  /* Import aus GitHub */
+  var dimp=document.getElementById('dimp'),dimplist=document.getElementById('dimplist'),dimpok=document.getElementById('dimpok');
+  function dimpChecked(){return Array.prototype.slice.call(dimplist.querySelectorAll('input:checked'));}
+  dimplist.addEventListener('change',function(){dimpok.disabled=!dimpChecked().length;});
+  document.getElementById('impgh').onclick=async function(){
+    dimplist.textContent='';dimpok.disabled=true;setInfo('dimpinfo','Lade Liste …','');openDlg(dimp);
+    try{
+      var files=(await ghList()).filter(function(f){return /\.xml$/i.test(f.name);}).sort(function(a,b){return a.name.localeCompare(b.name);});
+      if(!files.length){setInfo('dimpinfo','Keine .xml-Dateien in '+gh.repo+'/'+ghDir()+' gefunden.','');return;}
+      setInfo('dimpinfo',files.length+' Datei(en) in '+gh.repo+'/'+ghDir(),'');
+      files.forEach(function(f){
+        var l=document.createElement('label'),c=document.createElement('input'),n=document.createElement('span'),z=document.createElement('span');
+        c.type='checkbox';c.value=f.name;n.textContent=f.name;z.className='sz';z.textContent=Math.max(1,Math.round(f.size/1024))+' KB';
+        l.appendChild(c);l.appendChild(n);l.appendChild(z);dimplist.appendChild(l);
+      });
+    }catch(e){setInfo('dimpinfo',e.message,'err');}
+  };
+  document.getElementById('dimpall').onclick=function(){
+    var all=dimplist.querySelectorAll('input'),on=dimpChecked().length!==all.length;
+    Array.prototype.forEach.call(all,function(c){c.checked=on;});dimpok.disabled=!dimpChecked().length;
+  };
+  document.getElementById('dimpcancel').onclick=function(){closeDlg(dimp);};
+  dimpok.onclick=async function(){
+    var names=dimpChecked().map(function(c){return c.value;});if(!names.length)return;
+    dimpok.disabled=true;setInfo('dimpinfo','Lade '+names.length+' Datei(en) …','');
+    try{
+      var src=[];
+      for(var i=0;i<names.length;i++)src.push({name:names[i],text:await ghRead(ghPath(names[i]))});
+      closeDlg(dimp);load(src);
+    }catch(e){setInfo('dimpinfo',e.message,'err');dimpok.disabled=false;}
+  };
+
+  /* Export nach GitHub */
+  var dexp=document.getElementById('dexp'),dexpname=document.getElementById('dexpname'),dexpok=document.getElementById('dexpok'),expConfirm=false;
+  function expReset(){expConfirm=false;dexpok.textContent='Speichern';setInfo('dexpinfo','','');}
+  dexpname.addEventListener('input',expReset);
+  document.getElementById('expgh').onclick=function(){
+    if(!msgs.length){add('Der Chat ist leer, es gibt nichts zu exportieren.','bot hint');return;}
+    var d=new Date();
+    dexpname.value='xpath-chat-'+d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'-'+pad(d.getHours())+pad(d.getMinutes())+'.md';
+    setInfo('dexptarget','Ziel: '+gh.repo+'/'+(ghDir()?ghDir()+'/':''),'');expReset();dexpok.disabled=false;openDlg(dexp);
+  };
+  document.getElementById('dexpcancel').onclick=function(){closeDlg(dexp);};
+  dexpok.onclick=async function(){
+    var name=dexpname.value.trim();
+    if(!name||/[\/\\]/.test(name)){setInfo('dexpinfo','Bitte einen Dateinamen ohne Schrägstriche angeben.','err');return;}
+    if(!/\.md$/i.test(name)){name+='.md';dexpname.value=name;}
+    dexpok.disabled=true;
+    try{
+      var path=ghPath(name),ex=await ghExists(path);
+      if(ex&&!expConfirm){expConfirm=true;dexpok.textContent='Überschreiben';setInfo('dexpinfo','Die Datei existiert bereits. Überschreiben legt einen neuen Commit an.','err');dexpok.disabled=false;return;}
+      await ghWrite(path,buildMd(),ex&&ex.sha);
+      closeDlg(dexp);add('Chat nach GitHub exportiert: '+gh.repo+'/'+path,'bot hint');
+    }catch(e){setInfo('dexpinfo',e.message,'err');}
+    dexpok.disabled=false;
+  };
+
+  ghLoadCfg();ghFill();ghUpdateButtons();
+  if(gh.repo&&gh.token)ghConnect();
+})();
+</script>
+</body>
+</html>
+
+</body></html>

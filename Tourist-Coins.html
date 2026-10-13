@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Münzsammlung Tracker – Panel-Edition</title>
+<style>
+:root{
+  --paper:#f5efe4;
+  --paper-dark:#eee4d0;
+  --ink:#2b2620;
+  --ink-soft:#635a4c;
+  --brass:#8a6b32;
+  --brass-dark:#6b5124;
+  --copper:#a45a3a;
+  --line:#d9cbaa;
+  --card:#fffdf8;
+  --ok:#4a6b4a;
+  --ok-bg:#e4ead9;
+  --selected:#f0e0b8;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#1c1812; --paper-dark:#242019; --ink:#ece3d2; --ink-soft:#b8ab90;
+    --brass:#d4af62; --brass-dark:#e6c884; --copper:#d98a5f; --line:#3d3527;
+    --card:#241f18; --ok:#8fcf8f; --ok-bg:#22301f; --selected:#3a3220;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#1c1812; --paper-dark:#242019; --ink:#ece3d2; --ink-soft:#b8ab90;
+  --brass:#d4af62; --brass-dark:#e6c884; --copper:#d98a5f; --line:#3d3527;
+  --card:#241f18; --ok:#8fcf8f; --ok-bg:#22301f; --selected:#3a3220;
+}
+html{scroll-padding-top: env(safe-area-inset-top, 0px); box-sizing:border-box;}
+*,*::before,*::after{box-sizing:inherit;}
+body{
+  margin:0;background:var(--paper);color:var(--ink);
+  font-family:"Iowan Old Style","Georgia",serif;line-height:1.45;min-height:100%;
+}
+.wrap{max-width:1040px;margin:0 auto;padding:28px 20px 60px;}
+header.top{
+  display:flex;align-items:baseline;justify-content:space-between;gap:16px;
+  border-bottom:2px solid var(--brass);padding-bottom:14px;margin-bottom:22px;flex-wrap:wrap;
+}
+h1{
+  font-family:"Trajan Pro","Cinzel","Georgia",serif;font-weight:700;letter-spacing:.02em;
+  font-size:clamp(22px,4vw,30px);margin:0;color:var(--brass-dark);
+}
+.sub{color:var(--ink-soft);font-size:14px;margin:4px 0 0;}
+.stats{display:flex;gap:14px;font-size:13px;color:var(--ink-soft);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;}
+.stats b{color:var(--ink);font-size:16px;font-family:inherit;}
+.stat-owned b{color:var(--ok);}
+
+.toolbar{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:18px;align-items:center;}
+input[type="text"], select, textarea{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:14px;
+  border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:6px;padding:8px 10px;
+}
+input[type="text"]:focus, select:focus, textarea:focus{outline:2px solid var(--copper);outline-offset:1px;}
+#search{flex:1 1 220px;min-width:160px;}
+
+button{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:13px;font-weight:600;
+  border:1px solid var(--brass);background:var(--brass);color:#fff9ee;
+  padding:8px 14px;border-radius:6px;cursor:pointer;transition:filter .15s ease;
+}
+button:hover{filter:brightness(1.08);}
+button:disabled{opacity:.45;cursor:not-allowed;filter:none;}
+button.secondary{background:transparent;color:var(--brass-dark);border-color:var(--line);}
+button.secondary:hover{background:var(--paper-dark);}
+button.danger{background:var(--copper);border-color:var(--copper);}
+button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible{
+  outline:2px solid var(--copper);outline-offset:2px;
+}
+
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--card);margin-bottom:22px;}
+table{border-collapse:collapse;width:100%;min-width:720px;}
+thead th{
+  text-align:left;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:12px;
+  color:var(--ink-soft);font-weight:600;padding:10px 12px;border-bottom:2px solid var(--brass);
+  position:sticky;top:0;background:var(--card);white-space:nowrap;
+}
+tbody td{padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top;font-size:14px;}
+tbody tr:last-child td{border-bottom:none;}
+tbody tr{cursor:pointer;transition:background .1s ease;}
+tbody tr:hover{background:var(--paper-dark);}
+tbody tr.owned{background:color-mix(in srgb, var(--ok-bg) 45%, transparent);}
+tbody tr.selected{background:var(--selected) !important;}
+.badge{
+  display:inline-block;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:11px;
+  font-weight:700;letter-spacing:.02em;padding:2px 7px;border-radius:99px;border:1px solid var(--line);color:var(--ink-soft);
+}
+.badge.nt{border-color:var(--copper);color:var(--copper);}
+.badge.md{border-color:var(--brass);color:var(--brass-dark);}
+.badge.other{border-color:var(--ink-soft);color:var(--ink-soft);}
+.ort-cell b{display:block;}
+.ort-cell .plz{color:var(--ink-soft);font-size:12px;}
+.beschr{color:var(--ink-soft);font-size:13px;}
+.imgcell{font-size:11px;color:var(--ink-soft);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;}
+.thumbwrap{display:inline-flex;flex-direction:column;align-items:center;gap:2px;}
+.thumb{
+  width:104px;height:104px;object-fit:cover;border-radius:8px;border:1px solid var(--line);
+  background:var(--paper-dark);display:block;
+}
+.thumb-placeholder{
+  width:104px;height:104px;border-radius:8px;border:1px dashed var(--line);
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;color:var(--ink-soft);text-align:center;line-height:1.3;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  background:var(--paper-dark);padding:4px;
+}
+.thumb-label{font-size:9px;color:var(--ink-soft);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;}
+.thumbs-cell{display:flex;gap:8px;}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--line);}
+.dot.on{background:var(--ok);}
+.empty{padding:40px 20px;text-align:center;color:var(--ink-soft);font-size:14px;}
+
+.panel{
+  border:1px solid var(--line);border-radius:10px;background:var(--card);padding:14px 20px 18px;
+  margin-bottom:22px;
+}
+.panel summary{
+  cursor:pointer;list-style:none;display:flex;align-items:center;gap:10px;padding:4px 0;
+}
+.panel summary::-webkit-details-marker{display:none;}
+.panel summary::before{
+  content:"▸";display:inline-block;color:var(--brass);font-size:13px;
+  transition:transform .15s ease;flex:0 0 auto;
+}
+.panel[open] summary::before{transform:rotate(90deg);}
+.panel h2{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:15px;font-weight:700;
+  color:var(--brass-dark);margin:0;display:inline-flex;align-items:center;
+}
+.panel .panel-hint{font-size:12px;color:var(--ink-soft);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;margin:10px 0 14px;}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;}
+.grid label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--ink-soft);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;}
+.grid .full{grid-column:1/-1;}
+.grid input[type=text]{width:100%;}
+.vorhanden-row{display:flex;align-items:center;gap:8px;margin-top:14px;font-size:13px;color:var(--ink-soft);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;}
+.chk{width:18px;height:18px;accent-color:var(--ok);cursor:pointer;}
+.panel-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;}
+.selected-tag{
+  display:inline-block;font-size:11px;font-weight:700;letter-spacing:.02em;
+  padding:2px 8px;border-radius:99px;background:var(--selected);color:var(--brass-dark);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;margin-left:10px;
+}
+.importbar,.globalbar{display:flex;gap:8px;flex-wrap:wrap;}
+.globalbar{margin-bottom:14px;}
+.filelabel{
+  border:1px solid var(--line);border-radius:6px;padding:8px 14px;font-size:13px;font-weight:600;
+  color:var(--brass-dark);cursor:pointer;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+.hint{font-size:12px;color:var(--ink-soft);margin-top:10px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;}
+
+@media (max-width:640px){
+  .stats{width:100%;justify-content:space-between;}
+  thead{display:none;}
+  table, tbody, tr, td{display:block;width:100%;}
+  tbody tr{border-bottom:1px solid var(--line);padding:10px 4px;}
+  tbody td{border:none;padding:4px 12px;}
+  tbody td::before{content:attr(data-label);display:block;font-size:11px;color:var(--ink-soft);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;}
+  .tablewrap{min-width:0;}
+  table{min-width:0;}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div>
+      <h1>Münzsammlung Tracker · Panel-Edition</h1>
+      <p class="sub">Tabelle zum Auswählen — Bearbeiten, Anlegen &amp; Löschen unten im Panel</p>
+    </div>
+    <div class="stats">
+      <div>Einträge<br><b id="statTotal">0</b></div>
+      <div class="stat-owned">Vorhanden<br><b id="statOwned">0</b></div>
+      <div>Fehlend<br><b id="statMissing">0</b></div>
+    </div>
+  </header>
+
+  <details class="panel" id="panelDetails" open>
+    <summary>
+      <h2 id="panelTitle">Neuer Eintrag<span id="selectedTag" class="selected-tag" style="display:none;">bearbeite ausgewählten Eintrag</span></h2>
+    </summary>
+
+    <p class="panel-hint">Klicke unten in der Tabelle auf eine Zeile, um sie hier zu bearbeiten – oder fülle das Formular für einen neuen Eintrag aus.</p>
+
+    <div class="grid">
+      <label>Kategorie
+        <select id="fKat"></select>
+      </label>
+      <label>Region / Bundesland
+        <input type="text" id="fRegion" placeholder="z.B. Sachsen">
+      </label>
+      <label>Nr. / Katalog-Nr.
+        <input type="text" id="fNr" placeholder="z.B. SN048">
+      </label>
+      <label>PLZ
+        <input type="text" id="fPlz" placeholder="z.B. 01067">
+      </label>
+      <label class="full">Ort / Standort
+        <input type="text" id="fOrt" placeholder="z.B. Dresden">
+      </label>
+      <label class="full">Quelle (Adresse/Laden/Automat)
+        <input type="text" id="fQuelle" placeholder="z.B. Münzgasse 10">
+      </label>
+      <label class="full">Beschreibung / Motiv
+        <input type="text" id="fBeschr" placeholder="z.B. Frauenkirche Souvenirshop">
+      </label>
+      <label>Vorderseite (Bildpfad/URL)
+        <input type="text" id="fVorder" placeholder="images/SN048_v.jpg">
+      </label>
+      <label>Rückseite (Bildpfad/URL)
+        <input type="text" id="fRueck" placeholder="images/SN048_r.jpg">
+      </label>
+    </div>
+
+    <div class="vorhanden-row">
+      <input type="checkbox" id="fVorhanden" class="chk">
+      <label for="fVorhanden">bereits in meiner Sammlung vorhanden</label>
+    </div>
+
+    <div class="panel-actions">
+      <button id="btnSave">Eintrag speichern</button>
+      <button class="secondary" id="btnNew">Neuer Eintrag (Formular leeren)</button>
+      <button class="danger" id="btnDelete" disabled>Ausgewählten löschen</button>
+    </div>
+  </details>
+
+  <div class="globalbar">
+    <button class="secondary" id="btnExport">JSON exportieren</button>
+    <label class="filelabel">
+      JSON importieren (ersetzt aktuelle Daten)
+      <input type="file" id="fileImportReplace" accept="application/json" style="display:none;">
+    </label>
+    <label class="filelabel">
+      JSON importieren (zu bestehenden hinzufügen)
+      <input type="file" id="fileImportMerge" accept="application/json" style="display:none;">
+    </label>
+    <button class="secondary" id="btnClearAll">Alle Einträge löschen</button>
+  </div>
+  <p class="hint" style="margin-bottom:18px;">Alle Daten werden ausschließlich lokal in deinem Browser gespeichert (localStorage) — nichts wird an einen Server gesendet. Nutze „JSON exportieren“ regelmäßig als Backup.</p>
+    <input type="text" id="search" placeholder="Suche nach Ort, PLZ, Beschreibung, Nr. …">
+    <select id="filterKat"></select>
+    <select id="filterRegion"><option value="">Alle Regionen</option></select>
+    <select id="filterOrt"><option value="">Alle Orte</option></select>
+    <select id="filterVorhanden">
+      <option value="">Alle</option>
+      <option value="ja">Nur vorhanden</option>
+      <option value="nein">Nur fehlend</option>
+    </select>
+  </div>
+
+  <div class="tablewrap">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:30px;">✓</th>
+          <th>Kategorie</th>
+          <th>Ort</th>
+          <th>Quelle</th>
+          <th>Nr.</th>
+          <th>Beschreibung</th>
+          <th>Vorderseite</th>
+          <th>Rückseite</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+    <div class="empty" id="emptyState" style="display:none;">Keine Einträge gefunden. Lege oben einen neuen Eintrag an oder importiere eine JSON-Datei.</div>
+  </div>
+
+</div>
+
+<!-- =====================================================================
+     Card-Templates — eine <template> pro Kategorie, entspricht je einer
+     zukünftigen eigenständigen Datei (nt_card.html, md_card.html,
+     other_card.html). Innerhalb dieser Datei werden sie zur Laufzeit per
+     JS (siehe buildCardRow()) geklont und befüllt; bei einem späteren
+     Umzug auf eine Server-Variante kann der Inhalt jedes <template>
+     unverändert in eine eigene Datei kopiert werden (nur die
+     <template id="…">/</template>-Klammer entfällt bzw. wird durch den
+     jeweiligen Include-Mechanismus ersetzt). Platzhalter-Elemente sind
+     über "f-"-Klassen markiert und werden von buildCardRow() befüllt.
+     ===================================================================== -->
+
+<!-- nt_card.html — Kategorie "Nationaltoken" -->
+<template id="card-tpl-nt">
+  <tr>
+    <td data-label="Vorhanden"><span class="dot f-dot"></span></td>
+    <td data-label="Kategorie"><span class="badge nt f-badge">Nationaltoken</span></td>
+    <td data-label="Ort" class="ort-cell"><b class="f-ort"></b><span class="plz f-region-plz"></span></td>
+    <td data-label="Quelle" class="beschr f-quelle"></td>
+    <td data-label="Nr." class="f-nr"></td>
+    <td data-label="Beschreibung" class="beschr f-beschr"></td>
+    <td data-label="Vorderseite" class="f-vorder"></td>
+    <td data-label="Rückseite" class="f-rueck"></td>
+  </tr>
+</template>
+
+<!-- md_card.html — Kategorie "Memodaille" -->
+<template id="card-tpl-md">
+  <tr>
+    <td data-label="Vorhanden"><span class="dot f-dot"></span></td>
+    <td data-label="Kategorie"><span class="badge md f-badge">Memodaille</span></td>
+    <td data-label="Ort" class="ort-cell"><b class="f-ort"></b><span class="plz f-region-plz"></span></td>
+    <td data-label="Quelle" class="beschr f-quelle"></td>
+    <td data-label="Nr." class="f-nr"></td>
+    <td data-label="Beschreibung" class="beschr f-beschr"></td>
+    <td data-label="Vorderseite" class="f-vorder"></td>
+    <td data-label="Rückseite" class="f-rueck"></td>
+  </tr>
+</template>
+
+<!-- md_card.html — Kategorie "Memodaille" -->
+<template id="card-tpl-md">
+  <tr>
+    <td data-label="Vorhanden"><span class="dot f-dot"></span></td>
+    <td data-label="Kategorie"><span class="badge md f-badge">Memodaille</span></td>
+    <td data-label="Ort" class="ort-cell"><b class="f-ort"></b><span class="plz f-region-plz"></span></td>
+    <td data-label="Quelle" class="beschr f-quelle"></td>
+    <td data-label="Nr." class="f-nr"></td>
+    <td data-label="Beschreibung" class="beschr f-beschr"></td>
+    <td data-label="Vorderseite" class="f-vorder"></td>
+    <td data-label="Rückseite" class="f-rueck"></td>
+  </tr>
+</template>
+
+<!-- sb_card.html — Kategorie "Souvenir-0€-Schein" -->
+<template id="card-tpl-sb">
+  <tr>
+    <td data-label="Vorhanden"><span class="dot f-dot"></span></td>
+    <td data-label="Kategorie"><span class="badge md f-badge">Souvenir-0€-Schein</span></td>
+    <td data-label="Ort" class="ort-cell"><b class="f-ort"></b><span class="plz f-region-plz"></span></td>
+    <td data-label="Quelle" class="beschr f-quelle"></td>
+    <td data-label="Nr." class="f-nr"></td>
+    <td data-label="Beschreibung" class="beschr f-beschr"></td>
+    <td data-label="Vorderseite" class="f-vorder"></td>
+    <td data-label="Rückseite" class="f-rueck"></td>
+  </tr>
+</template>
+
+<!-- other_card.html — Fallback für alle Kategorien außerhalb von CATEGORIES ("Anderes") -->
+<template id="card-tpl-other">
+  <tr>
+    <td data-label="Vorhanden"><span class="dot f-dot"></span></td>
+    <td data-label="Kategorie"><span class="badge other f-badge">Anderes</span></td>
+    <td data-label="Ort" class="ort-cell"><b class="f-ort"></b><span class="plz f-region-plz"></span></td>
+    <td data-label="Quelle" class="beschr f-quelle"></td>
+    <td data-label="Nr." class="f-nr"></td>
+    <td data-label="Beschreibung" class="beschr f-beschr"></td>
+    <td data-label="Vorderseite" class="f-vorder"></td>
+    <td data-label="Rückseite" class="f-rueck"></td>
+  </tr>
+</template>
+
+<script>
+const STORAGE_KEY = "muenzsammlung_tracker_panel_v1";
+
+/* ===== Globale Kategorien-Definition =====
+   Einziger Ort, an dem die möglichen Kategorien festgelegt werden.
+   Editor-Dropdown, Filter-Dropdown und Tabellen-Badges lesen alle von hier.
+   Alles, was in gespeicherten Daten NICHT hier aufgeführt ist, wird
+   in Suche/Filter/Tabelle als "Anderes" behandelt/angezeigt. */
+const CATEGORIES = [
+  { value: "Nationaltoken", badgeClass: "nt", templateId: "card-tpl-nt" },
+  { value: "Memodaille",    badgeClass: "md", templateId: "card-tpl-md" },
+  { value: "Souvenirbanknote", badgeClass: "sb", templateId: "card-tpl-sb" }
+];
+const OTHER_LABEL = "Anderes";
+const OTHER_FILTER_VALUE = "__other__";
+const OTHER_BADGE_CLASS = "other";
+const OTHER_TEMPLATE_ID = "card-tpl-other";
+
+function getCategoryDef(kat){
+  return CATEGORIES.find(c => c.value === kat);
+}
+function categoryLabel(kat){
+  const def = getCategoryDef(kat);
+  return def ? def.value : OTHER_LABEL;
+}
+function categoryBadgeClass(kat){
+  const def = getCategoryDef(kat);
+  return def ? def.badgeClass : OTHER_BADGE_CLASS;
+}
+function getCardTemplateId(kat){
+  const def = getCategoryDef(kat);
+  return (def && def.templateId) ? def.templateId : OTHER_TEMPLATE_ID;
+}
+function populateCategorySelects(){
+  // Editor: nur die definierten Kategorien zur Auswahl
+  fKat.innerHTML = CATEGORIES.map(c => `<option value="${escapeHtml(c.value)}">${escapeHtml(c.value)}</option>`).join("");
+  // Filter: zusätzlich "Alle" und "Anderes"
+  filterKat.innerHTML = '<option value="">Alle Kategorien</option>'
+    + CATEGORIES.map(c => `<option value="${escapeHtml(c.value)}">${escapeHtml(c.value)}</option>`).join("")
+    + `<option value="${OTHER_FILTER_VALUE}">${OTHER_LABEL}</option>`;
+}
+
+function loadData(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw){
+      const parsed = JSON.parse(raw);
+      // Migration: ältere Einträge ohne eigenes "quelle"-Feld werden einmalig aus "ort" abgespalten.
+      const migrated = parsed.map(normalizeEntry);
+      const changed = JSON.stringify(migrated) !== JSON.stringify(parsed);
+      if(changed){
+        try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated)); }catch(e){ console.warn("Migration-Save fehlgeschlagen", e); }
+      }
+      return migrated;
+    }
+  }catch(e){ console.warn("Storage read failed", e); }
+  return [];
+}
+function saveData(){
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
+  catch(e){ console.warn("Storage write failed", e); }
+}
+
+let data = loadData();
+let selectedId = null;
+
+const tbody = document.getElementById("tbody");
+const emptyState = document.getElementById("emptyState");
+const search = document.getElementById("search");
+const filterKat = document.getElementById("filterKat");
+const filterRegion = document.getElementById("filterRegion");
+const filterOrt = document.getElementById("filterOrt");
+const filterVorhanden = document.getElementById("filterVorhanden");
+const statTotal = document.getElementById("statTotal");
+const statOwned = document.getElementById("statOwned");
+const statMissing = document.getElementById("statMissing");
+
+const fKat = document.getElementById("fKat");
+const fRegion = document.getElementById("fRegion");
+const fNr = document.getElementById("fNr");
+const fPlz = document.getElementById("fPlz");
+const fOrt = document.getElementById("fOrt");
+const fQuelle = document.getElementById("fQuelle");
+const fBeschr = document.getElementById("fBeschr");
+const fVorder = document.getElementById("fVorder");
+const fRueck = document.getElementById("fRueck");
+const fVorhanden = document.getElementById("fVorhanden");
+const panelTitle = document.getElementById("panelTitle");
+const selectedTag = document.getElementById("selectedTag");
+const btnDelete = document.getElementById("btnDelete");
+
+function escapeHtml(s){
+  return String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+
+function genId(){ return "e_" + Date.now() + "_" + Math.random().toString(36).slice(2,7); }
+
+/* Trennt einen kombinierten "Ort – Adresse/Quelle"-String am ersten Bindestrich/Halbgeviertstrich.
+   Wird für die Migration bestehender Daten (ohne eigenes "quelle"-Feld) sowie beim Import genutzt. */
+function splitOrtQuelle(ortRaw){
+  const m = String(ortRaw||"").match(/^(.*?)\s[–-]\s(.*)$/);
+  if(m) return { ort: m[1].trim(), quelle: m[2].trim() };
+  return { ort: String(ortRaw||"").trim(), quelle: "" };
+}
+
+function renderThumb(url, label){
+  if(!url){
+    return `<span class="thumbwrap"><span class="thumb-placeholder">kein Bild</span><span class="thumb-label">${label}</span></span>`;
+  }
+  const safeUrl = escapeHtml(url);
+  // onerror: Bild durch Platzhalter ersetzen, falls der Link/Pfad nicht auflösbar ist (z.B. lokaler Dateipfad ohne Hosting)
+  return `<span class="thumbwrap">
+    <a href="${safeUrl}" target="_blank" rel="noopener" title="${safeUrl}" onclick="event.stopPropagation()">
+      <img class="thumb" src="${safeUrl}" alt="${label}"
+        onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'thumb-placeholder',title:'${safeUrl.replace(/'/g,"&#39;")}',textContent:'Bild nicht ladbar'}))">
+    </a>
+    <span class="thumb-label">${label}</span>
+  </span>`;
+}
+
+function normalizeEntry(raw){
+  // Akzeptiert sowohl das Vorderseite/Rückseite-Schema als auch ältere Exporte mit "link".
+  // Hat der importierte Datensatz noch kein eigenes "quelle"-Feld, wird es aus "ort" abgespalten.
+  let ort = raw.ort || "";
+  let quelle = raw.quelle;
+  if(typeof quelle === "undefined"){
+    const split = splitOrtQuelle(ort);
+    ort = split.ort;
+    quelle = split.quelle;
+  }
+  return {
+    id: raw.id || genId(),
+    kat: raw.kat || CATEGORIES[0].value,
+    region: raw.region || "",
+    nr: raw.nr || "",
+    plz: raw.plz || "",
+    ort: ort,
+    quelle: quelle || "",
+    beschr: raw.beschr || "",
+    vorderseite: raw.vorderseite || raw.link || "",
+    rueckseite: raw.rueckseite || "",
+    vorhanden: !!raw.vorhanden
+  };
+}
+
+function refreshRegionOptions(){
+  const regions = [...new Set(data.map(d=>d.region).filter(Boolean))].sort();
+  const current = filterRegion.value;
+  filterRegion.innerHTML = '<option value="">Alle Regionen</option>' +
+    regions.map(r=>`<option value="${escapeHtml(r)}">${escapeHtml(r)}</option>`).join("");
+  if(regions.includes(current)) filterRegion.value = current;
+}
+
+function refreshOrtOptions(){
+  const orte = [...new Set(data.map(d=>d.ort).filter(Boolean))].sort();
+  const current = filterOrt.value;
+  filterOrt.innerHTML = '<option value="">Alle Orte</option>' +
+    orte.map(o=>`<option value="${escapeHtml(o)}">${escapeHtml(o)}</option>`).join("");
+  if(orte.includes(current)) filterOrt.value = current;
+}
+
+function refreshFilterOptions(){
+  refreshRegionOptions();
+  refreshOrtOptions();
+}
+
+function buildCardRow(d){
+  const tpl = document.getElementById(getCardTemplateId(d.kat));
+  const frag = tpl.content.cloneNode(true);
+  const tr = frag.querySelector("tr");
+
+  tr.dataset.id = d.id;
+  tr.className = [d.vorhanden ? "owned" : "", d.id === selectedId ? "selected" : ""].filter(Boolean).join(" ");
+
+  const dot = tr.querySelector(".f-dot");
+  dot.classList.toggle("on", !!d.vorhanden);
+  dot.title = d.vorhanden ? "vorhanden" : "fehlt";
+
+  const badge = tr.querySelector(".f-badge");
+  badge.className = "badge f-badge " + categoryBadgeClass(d.kat);
+  badge.textContent = categoryLabel(d.kat);
+
+  tr.querySelector(".f-ort").textContent = d.ort || "";
+  tr.querySelector(".f-region-plz").textContent = [d.region, d.plz].filter(Boolean).join(" · ");
+  tr.querySelector(".f-quelle").textContent = d.quelle || "–";
+  tr.querySelector(".f-nr").textContent = d.nr || "–";
+  tr.querySelector(".f-beschr").textContent = d.beschr || "–";
+  tr.querySelector(".f-vorder").innerHTML = renderThumb(d.vorderseite, "Vorderseite");
+  tr.querySelector(".f-rueck").innerHTML = renderThumb(d.rueckseite, "Rückseite");
+
+  return tr;
+}
+
+function render(){
+  const q = search.value.trim().toLowerCase();
+  const katF = filterKat.value;
+  const regF = filterRegion.value;
+  const ortF = filterOrt.value;
+  const vorF = filterVorhanden.value;
+
+  const filtered = data.filter(d=>{
+    if(katF){
+      if(katF === OTHER_FILTER_VALUE){
+        if(getCategoryDef(d.kat)) return false;
+      } else if(d.kat !== katF) return false;
+    }
+    if(regF && d.region !== regF) return false;
+    if(ortF && d.ort !== ortF) return false;
+    if(vorF === "ja" && !d.vorhanden) return false;
+    if(vorF === "nein" && d.vorhanden) return false;
+    if(q){
+      const hay = [d.ort,d.quelle,d.beschr,d.nr,d.plz,d.region,categoryLabel(d.kat)].join(" ").toLowerCase();
+      if(!hay.includes(q)) return false;
+    }
+    return true;
+  });
+
+  tbody.innerHTML = "";
+  const rowsFrag = document.createDocumentFragment();
+  filtered.forEach(d => rowsFrag.appendChild(buildCardRow(d)));
+  tbody.appendChild(rowsFrag);
+
+  emptyState.style.display = filtered.length ? "none" : "block";
+
+  statTotal.textContent = data.length;
+  const owned = data.filter(d=>d.vorhanden).length;
+  statOwned.textContent = owned;
+  statMissing.textContent = data.length - owned;
+}
+
+function selectRow(id){
+  const item = data.find(d=>d.id===id);
+  if(!item) return;
+  document.getElementById("panelDetails").open = true;
+  selectedId = id;
+  fKat.value = item.kat;
+  fRegion.value = item.region;
+  fNr.value = item.nr;
+  fPlz.value = item.plz;
+  fOrt.value = item.ort;
+  fQuelle.value = item.quelle || "";
+  fBeschr.value = item.beschr;
+  fVorder.value = item.vorderseite;
+  fRueck.value = item.rueckseite;
+  fVorhanden.checked = !!item.vorhanden;
+  panelTitle.textContent = "Eintrag bearbeiten";
+  selectedTag.style.display = "inline-block";
+  panelTitle.appendChild(selectedTag);
+  btnDelete.disabled = false;
+  render();
+  document.querySelector(".panel").scrollIntoView({behavior:"smooth", block:"nearest"});
+}
+
+function clearForm(){
+  selectedId = null;
+  fKat.value = CATEGORIES[0].value;
+  fRegion.value = "";
+  fNr.value = "";
+  fPlz.value = "";
+  fOrt.value = "";
+  fQuelle.value = "";
+  fBeschr.value = "";
+  fVorder.value = "";
+  fRueck.value = "";
+  fVorhanden.checked = false;
+  panelTitle.textContent = "Neuer Eintrag";
+  selectedTag.style.display = "none";
+  panelTitle.appendChild(selectedTag);
+  btnDelete.disabled = true;
+  render();
+}
+
+tbody.addEventListener("click", e=>{
+  const tr = e.target.closest("tr[data-id]");
+  if(!tr) return;
+  const id = tr.dataset.id;
+  if(selectedId === id){
+    clearForm(); // erneuter Klick hebt Auswahl auf
+  } else {
+    selectRow(id);
+  }
+});
+
+[search].forEach(el=>el.addEventListener("input", render));
+[filterKat, filterRegion, filterOrt, filterVorhanden].forEach(el=>el.addEventListener("change", render));
+
+document.getElementById("btnSave").addEventListener("click", ()=>{
+  const ort = fOrt.value.trim();
+  if(!ort){ alert("Bitte mindestens einen Ort eintragen."); return; }
+  const payload = {
+    kat: fKat.value,
+    region: fRegion.value.trim(),
+    nr: fNr.value.trim(),
+    plz: fPlz.value.trim(),
+    ort: ort,
+    quelle: fQuelle.value.trim(),
+    beschr: fBeschr.value.trim(),
+    vorderseite: fVorder.value.trim(),
+    rueckseite: fRueck.value.trim(),
+    vorhanden: fVorhanden.checked
+  };
+  if(selectedId){
+    const idx = data.findIndex(d=>d.id===selectedId);
+    if(idx > -1) data[idx] = {id:selectedId, ...payload};
+  } else {
+    const id = genId();
+    data.push({id, ...payload});
+    selectedId = id;
+  }
+  saveData();
+  refreshFilterOptions();
+  panelTitle.textContent = "Eintrag bearbeiten";
+  selectedTag.style.display = "inline-block";
+  panelTitle.appendChild(selectedTag);
+  btnDelete.disabled = false;
+  render();
+});
+
+document.getElementById("btnNew").addEventListener("click", clearForm);
+
+document.getElementById("btnDelete").addEventListener("click", ()=>{
+  if(!selectedId) return;
+  if(!confirm("Diesen Eintrag wirklich löschen?")) return;
+  data = data.filter(d=>d.id !== selectedId);
+  saveData();
+  refreshFilterOptions();
+  clearForm();
+});
+
+document.getElementById("btnExport").addEventListener("click", ()=>{
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:"application/json"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "muenzsammlung-export.json";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+});
+
+function handleImportFile(file, mode){
+  const reader = new FileReader();
+  reader.onload = () => {
+    try{
+      const imported = JSON.parse(reader.result);
+      if(!Array.isArray(imported)){ alert("Ungültiges Dateiformat: es wird ein JSON-Array erwartet."); return; }
+      const normalized = imported.map(normalizeEntry);
+      if(mode === "replace"){
+        data = normalized;
+      } else {
+        // merge: vorhandene IDs überschreiben, neue anhängen
+        const byId = new Map(data.map(d=>[d.id,d]));
+        normalized.forEach(n=>{
+          if(byId.has(n.id)){
+            byId.set(n.id, n);
+          } else {
+            byId.set(n.id, n);
+          }
+        });
+        data = [...byId.values()];
+      }
+      saveData();
+      refreshFilterOptions();
+      clearForm();
+      alert("Import erfolgreich: " + normalized.length + " Einträge verarbeitet (gesamt jetzt " + data.length + ").");
+    }catch(err){
+      alert("Datei konnte nicht gelesen werden: " + err.message);
+    }
+  };
+  reader.readAsText(file);
+}
+
+document.getElementById("fileImportReplace").addEventListener("change", (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  if(!confirm("Aktuelle Daten werden durch den Inhalt der Datei ersetzt. Fortfahren?")){ e.target.value=""; return; }
+  handleImportFile(file, "replace");
+  e.target.value = "";
+});
+document.getElementById("fileImportMerge").addEventListener("change", (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  handleImportFile(file, "merge");
+  e.target.value = "";
+});
+
+document.getElementById("btnClearAll").addEventListener("click", ()=>{
+  if(!confirm("Wirklich ALLE Einträge unwiderruflich löschen?")) return;
+  data = [];
+  saveData();
+  refreshFilterOptions();
+  clearForm();
+});
+
+populateCategorySelects();
+refreshFilterOptions();
+clearForm();
+</script>
+</body>
+</html>
