@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wiki Tabellen Extraktor</title>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; margin: 20px; background: #f4f6f8; color: #333; }
+        .container { max-width: 1000px; margin: 0 auto; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h1 { margin-top: 0; color: #1a202c; }
+        .input-group { display: flex; gap: 10px; margin-bottom: 20px; }
+        input[type="text"] { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; }
+        button { padding: 10px 20px; background: #2563eb; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; }
+        button:hover { background: #1d4ed8; }
+        .table-card { border: 1px solid #e2e8f0; border-radius: 6px; padding: 15px; margin-bottom: 20px; background: #fafafa; }
+        .table-card h3 { margin-top: 0; }
+        .header-inputs { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin: 10px 0; }
+        .header-inputs input { padding: 6px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 14px; }
+        .preview-wrapper { max-height: 200px; overflow-y: auto; background: white; border: 1px solid #e2e8f0; margin: 10px 0; }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        th, td { border: 1px solid #e2e8f0; padding: 6px 10px; text-align: left; }
+        th { background: #f1f5f9; }
+        .actions { display: flex; gap: 10px; margin-top: 10px; }
+        .btn-sec { background: #10b981; }
+        .btn-sec:hover { background: #059669; }
+        #status { font-weight: bold; margin-bottom: 15px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Wiki Tabellen Extraktor</h1>
+    <div class="input-group">
+        <input type="text" id="wikiUrl" placeholder="Wikipedia-URL eingeben (z. B. https://de.wikipedia.org/wiki/Dresden)" />
+        <button onclick="fetchAndParse()">Tabellen laden</button>
+    </div>
+    <div id="status"></div>
+    <div id="tablesContainer"></div>
+</div>
+
+<script>
+let extractedTablesData = [];
+
+async function fetchAndParse() {
+    const url = document.getElementById('wikiUrl').value.trim();
+    const status = document.getElementById('status');
+    const container = document.getElementById('tablesContainer');
+    container.innerHTML = '';
+    
+    if (!url) {
+        status.innerText = 'Bitte geben Sie eine gültige URL ein.';
+        return;
+    }
+
+    status.innerText = 'Lade Wikipedia-Seite...';
+
+    try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('Netzwerk-Antwort war nicht ok.');
+        const htmlText = await response.text();
+        
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(htmlText, 'text/html');
+        let tables = Array.from(doc.querySelectorAll('table.wikitable, table.sortable'));
+        
+        if (tables.length === 0) {
+            tables = Array.from(doc.querySelectorAll('table'));
+        }
+
+        if (tables.length === 0) {
+            status.innerText = 'Keine Tabellen auf dieser Seite gefunden.';
+            return;
+        }
+
+        status.innerText = `${tables.length} Tabelle(n) gefunden.`;
+        extractedTablesData = [];
+
+        tables.forEach((table, index) => {
+            renderTableCard(table, index);
+        });
+
+    } catch (err) {
+        status.innerText = 'Fehler beim Laden der Seite (CORS oder ungültige URL): ' + err.message;
+    }
+}
+
+function cleanTagName(text, fallbackIndex) {
+    if (!text) return `spalte_${fallbackIndex}`;
+    let clean = text.trim().replace(/\W+/g, '_').replace(/^[^a-zA-Z_]+/, '');
+    return clean || `spalte_${fallbackIndex}`;
+}
+
+function renderTableCard(table, index) {
+    const container = document.getElementById('tablesContainer');
+    const rows = Array.from(table.querySelectorAll('tr'));
+    if (rows.length === 0) return;
+
+    let headers = [];
+    const firstRowThs = rows[0].querySelectorAll('th');
+    const hasHeaders = firstRowThs.length > 0;
+
+    if (hasHeaders) {
+        firstRowThs.forEach((th, i) => {
+            headers.push(cleanTagName(th.innerText, i + 1));
+        });
+    } else {
+        const firstRowCells = rows[0].querySelectorAll('td, th');
+        firstRowCells.forEach((_, i) => {
+            headers.push(`spalte_${i + 1}`);
+        });
+    }
+
+    // Tabellendaten auslesen
+    const startRowIndex = hasHeaders ? 1 : 0;
+    const rawRowsData = [];
+
+    for (let r = startRowIndex; r < rows.length; r++) {
+        const cells = Array.from(rows[r].querySelectorAll('td, th'));
+        if (cells.length === 0) continue;
+        const rowValues = cells.map(cell => cell.innerText.trim());
+        rawRowsData.push(rowValues);
+    }
+
+    extractedTablesData[index] = {
+        id: index + 1,
+        headers: headers,
+        rows: rawRowsData
+    };
+
+    // Card UI bauen
+    const card = document.createElement('div');
+    card.className = 'table-card';
+    card.id = `table-card-${index}`;
+
+    let headerInputsHtml = headers.map((h, hIdx) => `
+        <div>
+            <label style="font-size: 11px; display:block;">Spalte ${hIdx + 1}</label>
+            <input type="text" value="${h}" onchange="updateHeader(${index}, ${hIdx}, this.value)" />
+        </div>
+    `).join('');
+
+    // Vorschau-Tabelle
+    let previewHtml = '<table><thead><tr>' + headers.map(h => `<th>${h}</th>`).join('') + '</tr></thead><tbody>';
+    rawRowsData.slice(0, 5).forEach(r => {
+        previewHtml += '<tr>' + r.map(c => `<td>${c}</td>`).join('') + '</tr>';
+    });
+    previewHtml += '</tbody></table>';
+
+    card.innerHTML = `
+        <h3>Tabelle #${index + 1} (${rawRowsData.length} Zeilen)</h3>
+        <label><b>Header / Tag-Namen anpassen:</b></label>
+        <div class="header-inputs">${headerInputsHtml}</div>
+        <div class="preview-wrapper">${previewHtml}</div>
+        <div class="actions">
+            <button class="btn-sec" onclick="exportSingleJSON(${index})">JSON Herunterladen</button>
+            <button class="btn-sec" onclick="exportSingleXML(${index})">XML Herunterladen</button>
+        </div>
+    `;
+
+    container.appendChild(card);
+}
+
+function updateHeader(tableIdx, headerIdx, value) {
+    const cleaned = cleanTagName(value, headerIdx + 1);
+    extractedTablesData[tableIdx].headers[headerIdx] = cleaned;
+}
+
+function exportSingleJSON(index) {
+    const tData = extractedTablesData[index];
+    const formatted = tData.rows.map(row => {
+        let obj = {};
+        tData.headers.forEach((h, hIdx) => {
+            obj[h] = row[hIdx] || '';
+        });
+        return obj;
+    });
+
+    const blob = new Blob([JSON.stringify(formatted, null, 4)], { type: 'application/json' });
+    downloadBlob(blob, `tabelle_${tData.id}.json`);
+}
+
+function exportSingleXML(index) {
+    const tData = extractedTablesData[index];
+    let xml = '<?xml version="1.0" encoding="UTF-8"?>\n<tabelle>\n';
+    
+    tData.rows.forEach(row => {
+        xml += '  <eintrag>\n';
+        tData.headers.forEach((h, hIdx) => {
+            const val = row[hIdx] || '';
+            const safeVal = val.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            xml += `    <${h}>${safeVal}</${h}>\n`;
+        });
+        xml += '  </eintrag>\n';
+    });
+    xml += '</tabelle>';
+
+    const blob = new Blob([xml], { type: 'application/xml' });
+    downloadBlob(blob, `tabelle_${tData.id}.xml`);
+}
+
+function downloadBlob(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+}
+</script>
+
+</body>
+</html>
