@@ -16,29 +16,31 @@
         .table-card { border: 1px solid #e2e8f0; border-radius: 6px; padding: 15px; margin-bottom: 20px; background: #fafafa; }
         .table-card h3 { margin-top: 0; margin-bottom: 5px; }
         .section-badge { display: inline-block; background: #e2e8f0; color: #475569; padding: 3px 8px; border-radius: 4px; font-size: 12px; margin-bottom: 12px; }
-        .config-row { display: flex; gap: 15px; align-items: center; margin-bottom: 10px; }
-        .config-row label { font-weight: bold; font-size: 14px; }
-        .config-row input { padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 14px; }
         .preview-wrapper { max-height: 200px; overflow-y: auto; background: white; border: 1px solid #e2e8f0; margin: 10px 0; }
         table { width: 100%; border-collapse: collapse; font-size: 14px; }
         th, td { border: 1px solid #e2e8f0; padding: 6px 10px; text-align: left; }
         th { background: #f1f5f9; }
         .actions { display: flex; gap: 10px; margin-top: 10px; }
-        .btn-sec { background: #10b981; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; }
+        .btn-sec { background: #10b981; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px; }
         .btn-sec:hover { background: #059669; }
         #status { font-weight: bold; margin-bottom: 15px; }
 
         /* Modal / Dialog Style */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
         .modal-overlay.active { display: flex; }
-        .modal-content { background: white; padding: 25px; border-radius: 8px; max-width: 600px; width: 90%; max-height: 85vh; overflow-y: auto; box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
+        .modal-content { background: white; padding: 25px; border-radius: 8px; max-width: 650px; width: 90%; max-height: 85vh; overflow-y: auto; box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
         .modal-content h2 { margin-top: 0; font-size: 20px; color: #1a202c; }
         .modal-field { margin-bottom: 15px; }
         .modal-field label { display: block; font-weight: bold; font-size: 13px; margin-bottom: 5px; }
-        .modal-field input { width: 100%; box-sizing: border-box; padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px; }
-        .modal-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
+        .modal-field input[type="text"] { width: 100%; box-sizing: border-box; padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px; }
+        
+        .column-card { border: 1px solid #e2e8f0; background: #f8fafc; padding: 8px 10px; border-radius: 4px; }
+        .column-header-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+        .column-header-row label { font-size: 13px; font-weight: bold; cursor: pointer; user-select: none; }
+        .modal-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 10px; margin-top: 5px; }
+        
         .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
-        .btn-cancel { background: #64748b; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; }
+        .btn-cancel { background: #64748b; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px; }
         .btn-cancel:hover { background: #475569; }
     </style>
 </head>
@@ -57,21 +59,30 @@
 <!-- Export-Dialog (Modal) -->
 <div id="exportModal" class="modal-overlay">
     <div class="modal-content">
-        <h2>JSON Export Konfiguration</h2>
+        <h2 id="modalTitle">Export Konfiguration</h2>
         <div class="modal-field">
             <label for="exportFileName">Ziel-Dateiname (ohne Endung):</label>
             <input type="text" id="exportFileName" placeholder="z. B. von_der_uno_anerkannte_staaten" />
         </div>
+        
+        <!-- Nur im XML-Modus sichtbar -->
+        <div class="modal-field" id="xmlRootField" style="display: none;">
+            <label for="xmlRootTag">Root-XML-Tag (Haupt-Container):</label>
+            <input type="text" id="xmlRootTag" placeholder="z. B. staaten_liste" />
+        </div>
+
         <div class="modal-field">
-            <label for="rowItemName">Name des Zeilen-Items (Row Object Key):</label>
+            <label for="rowItemName">Name des Zeilen-Items (Row Object Tag):</label>
             <input type="text" id="rowItemName" value="eintrag" placeholder="z. B. staat, zeile, item" />
         </div>
+        
         <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 15px 0;">
-        <label style="font-weight: bold; font-size: 14px; margin-bottom: 10px; display: block;">Spalten-Itemnamen (Keys):</label>
+        <label style="font-weight: bold; font-size: 14px; margin-bottom: 10px; display: block;">Spalten-Auswahl & Item-Namen:</label>
         <div id="modalColumnsGrid" class="modal-grid"></div>
+
         <div class="modal-actions">
             <button class="btn-cancel" onclick="closeModal()">Abbrechen</button>
-            <button class="btn-sec" onclick="confirmJsonExport()">Download JSON</button>
+            <button class="btn-sec" id="modalConfirmBtn" onclick="executeExport()">Herunterladen</button>
         </div>
     </div>
 </div>
@@ -79,6 +90,7 @@
 <script>
 let extractedTablesData = [];
 let currentExportTableIndex = null;
+let currentExportFormat = 'json';
 
 function removeFootnotes(text) {
     if (!text) return '';
@@ -97,7 +109,6 @@ function findPrecedingHeading(table) {
     while (current) {
         let prev = current.previousElementSibling;
         while (prev) {
-            // Nach Überschriften suchen (h2, h3, h4, h5, h6 oder .mw-heading)
             if (/^H[1-6]$/i.test(prev.tagName)) {
                 return removeFootnotes(prev.innerText);
             }
@@ -174,7 +185,6 @@ function renderTableCard(table, index) {
     const rows = Array.from(table.querySelectorAll('tr'));
     if (rows.length === 0) return;
 
-    // Vorherige Überschrift ermitteln
     const sectionHeading = findPrecedingHeading(table) || `Tabelle ${index + 1}`;
 
     let headers = [];
@@ -211,7 +221,7 @@ function renderTableCard(table, index) {
         }
     }
 
-    const suggestedFileName = cleanTagName(sectionHeading, index + 1);
+    const suggestedName = cleanTagName(sectionHeading, index + 1);
 
     extractedTablesData[index] = {
         id: index + 1,
@@ -220,9 +230,9 @@ function renderTableCard(table, index) {
         headers: headers,
         originalHeaders: originalHeaders,
         rows: rawRowsData,
-        xmlRootTag: suggestedFileName,
+        xmlRootTag: suggestedName,
         rowItemName: "eintrag",
-        exportFileName: suggestedFileName
+        exportFileName: suggestedName
     };
 
     const card = document.createElement('div');
@@ -237,43 +247,49 @@ function renderTableCard(table, index) {
     card.innerHTML = `
         <h3>Tabelle #${index + 1} (${rawRowsData.length} Datensätze)</h3>
         <span class="section-badge">Abschnitt: ${sectionHeading}</span>
-        <div class="config-row">
-            <label for="xmlRoot_${index}">XML Root-Tag:</label>
-            <input type="text" id="xmlRoot_${index}" value="${extractedTablesData[index].xmlRootTag}" onchange="updateXmlRoot(${index}, this.value)" />
-        </div>
         <div class="preview-wrapper">${previewHtml}</div>
         <div class="actions">
-            <button class="btn-sec" onclick="openExportModal(${index})">Export als JSON</button>
-            <button class="btn-sec" onclick="exportSingleXML(${index})">XML Herunterladen</button>
+            <!-- Beschriftung auf "JSON herunterladen" angepasst -->
+            <button class="btn-sec" onclick="openExportModal(${index}, 'json')">JSON herunterladen</button>
+            <button class="btn-sec" onclick="openExportModal(${index}, 'xml')">Export als XML</button>
         </div>
     `;
 
     container.appendChild(card);
 }
 
-function updateXmlRoot(tableIdx, value) {
-    const cleaned = cleanTagName(value, tableIdx + 1);
-    extractedTablesData[tableIdx].xmlRootTag = cleaned || `tabelle_${tableIdx + 1}`;
-}
-
-function openExportModal(index) {
+function openExportModal(index, format) {
     currentExportTableIndex = index;
+    currentExportFormat = format;
     const tData = extractedTablesData[index];
     
+    document.getElementById('modalTitle').innerText = format.toUpperCase() + ' Export Konfiguration';
     document.getElementById('exportFileName').value = tData.exportFileName || tData.xmlRootTag;
     document.getElementById('rowItemName').value = tData.rowItemName || "eintrag";
     
+    const xmlRootField = document.getElementById('xmlRootField');
+    if (format === 'xml') {
+        xmlRootField.style.display = 'block';
+        document.getElementById('xmlRootTag').value = tData.xmlRootTag || "tabellen";
+    } else {
+        xmlRootField.style.display = 'none';
+    }
+
     const grid = document.getElementById('modalColumnsGrid');
     grid.innerHTML = '';
 
     tData.headers.forEach((h, hIdx) => {
-        const div = document.createElement('div');
-        div.className = 'modal-field';
-        div.innerHTML = `
-            <label>Spalte ${hIdx + 1} (${tData.originalHeaders[hIdx] || ''}):</label>
-            <input type="text" id="colKeyInput_${hIdx}" value="${h}" />
+        const cardDiv = document.createElement('div');
+        cardDiv.className = 'column-card';
+        cardDiv.innerHTML = `
+            <div class="column-header-row">
+                <input type="checkbox" id="colActive_${hIdx}" checked />
+                <label for="colActive_${hIdx}">Spalte ${hIdx + 1} einschließen</label>
+            </div>
+            <input type="text" id="colKeyInput_${hIdx}" value="${h}" placeholder="Key / Tag Name" />
+            <span style="display:block; font-size: 11px; color: #64748b; margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Orig: "${tData.originalHeaders[hIdx] || ''}"</span>
         `;
-        grid.appendChild(div);
+        grid.appendChild(cardDiv);
     });
 
     document.getElementById('exportModal').classList.add('active');
@@ -284,31 +300,50 @@ function closeModal() {
     currentExportTableIndex = null;
 }
 
-function confirmJsonExport() {
+function executeExport() {
     if (currentExportTableIndex === null) return;
     
     const index = currentExportTableIndex;
     const tData = extractedTablesData[index];
     
-    // Ziel-Dateinamen einlesen & bereinigen
     const rawFileName = document.getElementById('exportFileName').value;
     const fileName = cleanTagName(rawFileName, index + 1) || `tabelle_${index + 1}`;
     tData.exportFileName = fileName;
 
-    // Zeilen-Item-Name lesen
     const rawRowName = document.getElementById('rowItemName').value;
     const rowItemName = cleanTagName(rawRowName, 1) || "eintrag";
     tData.rowItemName = rowItemName;
 
-    // Spalten-Keys aus dem Modal einlesen
-    const updatedHeaders = [];
-    tData.headers.forEach((_, hIdx) => {
-        const val = document.getElementById(`colKeyInput_${hIdx}`).value;
-        updatedHeaders.push(cleanTagName(val, hIdx + 1));
-    });
-    tData.headers = updatedHeaders;
+    const activeIndices = [];
+    const activeHeaders = [];
 
-    // JSON Struktur bauen
+    tData.headers.forEach((_, hIdx) => {
+        const isActive = document.getElementById(`colActive_${hIdx}`).checked;
+        if (isActive) {
+            activeIndices.push(hIdx);
+            const keyVal = document.getElementById(`colKeyInput_${hIdx}`).value;
+            activeHeaders.push(cleanTagName(keyVal, hIdx + 1));
+        }
+    });
+
+    if (activeIndices.length === 0) {
+        alert('Bitte aktivieren Sie mindestens eine Spalte für den Export.');
+        return;
+    }
+
+    if (currentExportFormat === 'json') {
+        exportJSON(tData, activeIndices, activeHeaders, fileName, rowItemName);
+    } else {
+        const rawRootTag = document.getElementById('xmlRootTag').value;
+        const xmlRootTag = cleanTagName(rawRootTag, index + 1) || "tabellen";
+        tData.xmlRootTag = xmlRootTag;
+        exportXML(tData, activeIndices, activeHeaders, fileName, rowItemName, xmlRootTag);
+    }
+
+    closeModal();
+}
+
+function exportJSON(tData, activeIndices, activeHeaders, fileName, rowItemName) {
     const list = [];
 
     if (tData.hasHeaders) {
@@ -318,19 +353,20 @@ function confirmJsonExport() {
                 "section": tData.sectionHeading 
             } 
         };
-        tData.headers.forEach((h, hIdx) => {
-            // Original-Überschrift als Wert setzen
-            headerObj[h] = tData.originalHeaders[hIdx] || h;
+        activeIndices.forEach((hIdx, i) => {
+            const hKey = activeHeaders[i];
+            headerObj[hKey] = tData.originalHeaders[hIdx] || hKey;
         });
         list.push(headerObj);
     }
 
     tData.rows.forEach(row => {
         let itemObj = {};
-        tData.headers.forEach((h, hIdx) => {
+        activeIndices.forEach((hIdx, i) => {
+            const hKey = activeHeaders[i];
             const val = row[hIdx] || '';
             if (val !== '') {
-                itemObj[h] = val;
+                itemObj[hKey] = val;
             }
         });
         if (Object.keys(itemObj).length > 0) {
@@ -342,34 +378,29 @@ function confirmJsonExport() {
 
     const blob = new Blob([JSON.stringify(list, null, 4)], { type: 'application/json' });
     downloadBlob(blob, `${fileName}.json`);
-
-    closeModal();
 }
 
-function exportSingleXML(index) {
-    const tData = extractedTablesData[index];
-    const rootTagName = tData.xmlRootTag;
-    const rowItemName = tData.rowItemName || "eintrag";
-    const fileName = tData.exportFileName || rootTagName;
-    
+function exportXML(tData, activeIndices, activeHeaders, fileName, rowItemName, rootTagName) {
     let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<${rootTagName} section="${tData.sectionHeading}">\n`;
     
     if (tData.hasHeaders) {
         xml += `  <${rowItemName} header="true">\n`;
-        tData.headers.forEach((h, hIdx) => {
-            const origVal = (tData.originalHeaders[hIdx] || h).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-            xml += `    <${h}>${origVal}</${h}>\n`;
+        activeIndices.forEach((hIdx, i) => {
+            const hKey = activeHeaders[i];
+            const origVal = (tData.originalHeaders[hIdx] || hKey).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            xml += `    <${hKey}>${origVal}</${hKey}>\n`;
         });
         xml += `  </${rowItemName}>\n`;
     }
 
     tData.rows.forEach(row => {
         let rowXml = '';
-        tData.headers.forEach((h, hIdx) => {
+        activeIndices.forEach((hIdx, i) => {
+            const hKey = activeHeaders[i];
             const val = row[hIdx] || '';
             if (val !== '') {
                 const safeVal = val.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-                rowXml += `    <${h}>${safeVal}</${h}>\n`;
+                rowXml += `    <${hKey}>${safeVal}</${hKey}>\n`;
             }
         });
         if (rowXml !== '') {
