@@ -14,7 +14,8 @@
         button { padding: 10px 20px; background: #2563eb; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; }
         button:hover { background: #1d4ed8; }
         .table-card { border: 1px solid #e2e8f0; border-radius: 6px; padding: 15px; margin-bottom: 20px; background: #fafafa; }
-        .table-card h3 { margin-top: 0; }
+        .table-card h3 { margin-top: 0; margin-bottom: 5px; }
+        .section-badge { display: inline-block; background: #e2e8f0; color: #475569; padding: 3px 8px; border-radius: 4px; font-size: 12px; margin-bottom: 12px; }
         .config-row { display: flex; gap: 15px; align-items: center; margin-bottom: 10px; }
         .config-row label { font-weight: bold; font-size: 14px; }
         .config-row input { padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 14px; }
@@ -23,7 +24,7 @@
         th, td { border: 1px solid #e2e8f0; padding: 6px 10px; text-align: left; }
         th { background: #f1f5f9; }
         .actions { display: flex; gap: 10px; margin-top: 10px; }
-        .btn-sec { background: #10b981; }
+        .btn-sec { background: #10b981; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; }
         .btn-sec:hover { background: #059669; }
         #status { font-weight: bold; margin-bottom: 15px; }
 
@@ -37,7 +38,7 @@
         .modal-field input { width: 100%; box-sizing: border-box; padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px; }
         .modal-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
         .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
-        .btn-cancel { background: #64748b; }
+        .btn-cancel { background: #64748b; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; }
         .btn-cancel:hover { background: #475569; }
     </style>
 </head>
@@ -57,6 +58,10 @@
 <div id="exportModal" class="modal-overlay">
     <div class="modal-content">
         <h2>JSON Export Konfiguration</h2>
+        <div class="modal-field">
+            <label for="exportFileName">Ziel-Dateiname (ohne Endung):</label>
+            <input type="text" id="exportFileName" placeholder="z. B. von_der_uno_anerkannte_staaten" />
+        </div>
         <div class="modal-field">
             <label for="rowItemName">Name des Zeilen-Items (Row Object Key):</label>
             <input type="text" id="rowItemName" value="eintrag" placeholder="z. B. staat, zeile, item" />
@@ -87,8 +92,29 @@ function cleanTagName(text, fallbackIndex) {
     return clean || `spalte_${fallbackIndex}`;
 }
 
+function findPrecedingHeading(table) {
+    let current = table;
+    while (current) {
+        let prev = current.previousElementSibling;
+        while (prev) {
+            // Nach Überschriften suchen (h2, h3, h4, h5, h6 oder .mw-heading)
+            if (/^H[1-6]$/i.test(prev.tagName)) {
+                return removeFootnotes(prev.innerText);
+            }
+            const headingInside = prev.querySelector('h1, h2, h3, h4, h5, h6');
+            if (headingInside) {
+                return removeFootnotes(headingInside.innerText);
+            }
+            prev = prev.previousElementSibling;
+        }
+        current = current.parentElement;
+        if (current && current.tagName === 'BODY') break;
+    }
+    return '';
+}
+
 async function fetchAndParse() {
-    const rawUrl = document.getElementById('wikiUrl').value.trim();
+    let rawUrl = document.getElementById('wikiUrl').value.trim();
     const status = document.getElementById('status');
     const container = document.getElementById('tablesContainer');
     container.innerHTML = '';
@@ -96,6 +122,10 @@ async function fetchAndParse() {
     if (!rawUrl) {
         status.innerText = 'Bitte geben Sie eine gültige URL ein.';
         return;
+    }
+
+    if (!rawUrl.startsWith('http://') && !rawUrl.startsWith('https://')) {
+        rawUrl = 'https://' + rawUrl;
     }
 
     status.innerText = 'Lade Wikipedia-Seite über API...';
@@ -117,7 +147,7 @@ async function fetchAndParse() {
         const parser = new DOMParser();
         const doc = parser.parseFromString(htmlText, 'text/html');
         
-        doc.querySelectorAll('sup.reference, .reference').forEach(e => e.remove());
+        doc.querySelectorAll('sup.reference, .reference, .mw-editsection').forEach(e => e.remove());
 
         let tables = Array.from(doc.querySelectorAll('table.wikitable, table.sortable'));
         if (tables.length === 0) tables = Array.from(doc.querySelectorAll('table'));
@@ -144,17 +174,24 @@ function renderTableCard(table, index) {
     const rows = Array.from(table.querySelectorAll('tr'));
     if (rows.length === 0) return;
 
+    // Vorherige Überschrift ermitteln
+    const sectionHeading = findPrecedingHeading(table) || `Tabelle ${index + 1}`;
+
     let headers = [];
+    let originalHeaders = [];
     const firstRowThs = rows[0].querySelectorAll('th');
     const hasHeaders = firstRowThs.length > 0;
 
     if (hasHeaders) {
         firstRowThs.forEach((th, i) => {
-            headers.push(cleanTagName(th.innerText, i + 1));
+            const origText = removeFootnotes(th.innerText);
+            originalHeaders.push(origText);
+            headers.push(cleanTagName(origText, i + 1));
         });
     } else {
         const firstRowCells = rows[0].querySelectorAll('td, th');
         firstRowCells.forEach((_, i) => {
+            originalHeaders.push(`Spalte ${i + 1}`);
             headers.push(`spalte_${i + 1}`);
         });
     }
@@ -174,13 +211,18 @@ function renderTableCard(table, index) {
         }
     }
 
+    const suggestedFileName = cleanTagName(sectionHeading, index + 1);
+
     extractedTablesData[index] = {
         id: index + 1,
+        sectionHeading: sectionHeading,
         hasHeaders: hasHeaders,
         headers: headers,
+        originalHeaders: originalHeaders,
         rows: rawRowsData,
-        xmlRootTag: `tabelle_${index + 1}`,
-        rowItemName: "eintrag"
+        xmlRootTag: suggestedFileName,
+        rowItemName: "eintrag",
+        exportFileName: suggestedFileName
     };
 
     const card = document.createElement('div');
@@ -194,6 +236,7 @@ function renderTableCard(table, index) {
 
     card.innerHTML = `
         <h3>Tabelle #${index + 1} (${rawRowsData.length} Datensätze)</h3>
+        <span class="section-badge">Abschnitt: ${sectionHeading}</span>
         <div class="config-row">
             <label for="xmlRoot_${index}">XML Root-Tag:</label>
             <input type="text" id="xmlRoot_${index}" value="${extractedTablesData[index].xmlRootTag}" onchange="updateXmlRoot(${index}, this.value)" />
@@ -213,11 +256,11 @@ function updateXmlRoot(tableIdx, value) {
     extractedTablesData[tableIdx].xmlRootTag = cleaned || `tabelle_${tableIdx + 1}`;
 }
 
-// Dialog / Modal Funktionen
 function openExportModal(index) {
     currentExportTableIndex = index;
     const tData = extractedTablesData[index];
     
+    document.getElementById('exportFileName').value = tData.exportFileName || tData.xmlRootTag;
     document.getElementById('rowItemName').value = tData.rowItemName || "eintrag";
     
     const grid = document.getElementById('modalColumnsGrid');
@@ -227,7 +270,7 @@ function openExportModal(index) {
         const div = document.createElement('div');
         div.className = 'modal-field';
         div.innerHTML = `
-            <label>Spalte ${hIdx + 1}:</label>
+            <label>Spalte ${hIdx + 1} (${tData.originalHeaders[hIdx] || ''}):</label>
             <input type="text" id="colKeyInput_${hIdx}" value="${h}" />
         `;
         grid.appendChild(div);
@@ -247,7 +290,12 @@ function confirmJsonExport() {
     const index = currentExportTableIndex;
     const tData = extractedTablesData[index];
     
-    // Zeilen-Item-Name lesen und bereinigen
+    // Ziel-Dateinamen einlesen & bereinigen
+    const rawFileName = document.getElementById('exportFileName').value;
+    const fileName = cleanTagName(rawFileName, index + 1) || `tabelle_${index + 1}`;
+    tData.exportFileName = fileName;
+
+    // Zeilen-Item-Name lesen
     const rawRowName = document.getElementById('rowItemName').value;
     const rowItemName = cleanTagName(rawRowName, 1) || "eintrag";
     tData.rowItemName = rowItemName;
@@ -263,11 +311,16 @@ function confirmJsonExport() {
     // JSON Struktur bauen
     const list = [];
 
-    // Header als 1. Eintrag liefern (wenn vorhanden)
     if (tData.hasHeaders) {
-        let headerObj = { "_attributes": { "header": "true" } };
-        tData.headers.forEach((h) => {
-            headerObj[h] = h;
+        let headerObj = { 
+            "_attributes": { 
+                "header": "true",
+                "section": tData.sectionHeading 
+            } 
+        };
+        tData.headers.forEach((h, hIdx) => {
+            // Original-Überschrift als Wert setzen
+            headerObj[h] = tData.originalHeaders[hIdx] || h;
         });
         list.push(headerObj);
     }
@@ -288,7 +341,7 @@ function confirmJsonExport() {
     });
 
     const blob = new Blob([JSON.stringify(list, null, 4)], { type: 'application/json' });
-    downloadBlob(blob, `${tData.xmlRootTag}.json`);
+    downloadBlob(blob, `${fileName}.json`);
 
     closeModal();
 }
@@ -297,13 +350,15 @@ function exportSingleXML(index) {
     const tData = extractedTablesData[index];
     const rootTagName = tData.xmlRootTag;
     const rowItemName = tData.rowItemName || "eintrag";
+    const fileName = tData.exportFileName || rootTagName;
     
-    let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<${rootTagName}>\n`;
+    let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<${rootTagName} section="${tData.sectionHeading}">\n`;
     
     if (tData.hasHeaders) {
         xml += `  <${rowItemName} header="true">\n`;
-        tData.headers.forEach((h) => {
-            xml += `    <${h}>${h}</${h}>\n`;
+        tData.headers.forEach((h, hIdx) => {
+            const origVal = (tData.originalHeaders[hIdx] || h).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            xml += `    <${h}>${origVal}</${h}>\n`;
         });
         xml += `  </${rowItemName}>\n`;
     }
@@ -325,7 +380,7 @@ function exportSingleXML(index) {
     xml += `</${rootTagName}>`;
 
     const blob = new Blob([xml], { type: 'application/xml' });
-    downloadBlob(blob, `${rootTagName}.xml`);
+    downloadBlob(blob, `${fileName}.xml`);
 }
 
 function downloadBlob(blob, filename) {
