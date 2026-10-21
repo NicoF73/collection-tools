@@ -1,93 +1,3 @@
-<!DOCTYPE html>
-<html lang="de">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wiki Tabellen Extraktor</title>
-    <style>
-        body { font-family: system-ui, -apple-system, sans-serif; margin: 20px; background: #f4f6f8; color: #333; }
-        .container { max-width: 1000px; margin: 0 auto; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        h1 { margin-top: 0; color: #1a202c; }
-        .input-group { display: flex; gap: 10px; margin-bottom: 15px; }
-        input[type="text"] { padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; }
-        .url-input { flex: 1; }
-        button { padding: 10px 20px; background: #2563eb; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; }
-        button:hover { background: #1d4ed8; }
-        .table-card { border: 1px solid #e2e8f0; border-radius: 6px; padding: 15px; margin-bottom: 20px; background: #fafafa; }
-        .table-card h3 { margin-top: 0; margin-bottom: 5px; }
-        .section-badge { display: inline-block; background: #e2e8f0; color: #475569; padding: 3px 8px; border-radius: 4px; font-size: 12px; margin-bottom: 12px; }
-        .preview-wrapper { max-height: 200px; overflow-y: auto; background: white; border: 1px solid #e2e8f0; margin: 10px 0; }
-        table { width: 100%; border-collapse: collapse; font-size: 14px; }
-        th, td { border: 1px solid #e2e8f0; padding: 6px 10px; text-align: left; }
-        th { background: #f1f5f9; }
-        .actions { display: flex; gap: 10px; margin-top: 10px; }
-        .btn-sec { background: #10b981; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px; }
-        .btn-sec:hover { background: #059669; }
-        #status { font-weight: bold; margin-bottom: 15px; }
-
-        /* Modal / Dialog Style */
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
-        .modal-overlay.active { display: flex; }
-        .modal-content { background: white; padding: 25px; border-radius: 8px; max-width: 650px; width: 90%; max-height: 85vh; overflow-y: auto; box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
-        .modal-content h2 { margin-top: 0; font-size: 20px; color: #1a202c; }
-        .modal-field { margin-bottom: 15px; }
-        .modal-field label { display: block; font-weight: bold; font-size: 13px; margin-bottom: 5px; }
-        .modal-field input[type="text"] { width: 100%; box-sizing: border-box; padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px; }
-        
-        .column-card { border: 1px solid #e2e8f0; background: #f8fafc; padding: 8px 10px; border-radius: 4px; }
-        .column-header-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
-        .column-header-row label { font-size: 13px; font-weight: bold; cursor: pointer; user-select: none; }
-        .modal-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 10px; margin-top: 5px; }
-        
-        .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
-        .btn-cancel { background: #64748b; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px; }
-        .btn-cancel:hover { background: #475569; }
-    </style>
-</head>
-<body>
-
-<div class="container">
-    <h1>Wiki Tabellen Extraktor</h1>
-    <div class="input-group">
-        <input type="text" id="wikiUrl" class="url-input" placeholder="Wikipedia-URL eingeben (z. B. https://de.wikipedia.org/wiki/Liste_der_Staaten_der_Erde)" />
-        <button onclick="fetchAndParse()">Tabellen laden</button>
-    </div>
-    <div id="status"></div>
-    <div id="tablesContainer"></div>
-</div>
-
-<!-- Export-Dialog (Modal) -->
-<div id="exportModal" class="modal-overlay">
-    <div class="modal-content">
-        <h2 id="modalTitle">Export Konfiguration</h2>
-        <div class="modal-field">
-            <label for="exportFileName">Ziel-Dateiname (ohne Endung):</label>
-            <input type="text" id="exportFileName" placeholder="z. B. von_der_uno_anerkannte_staaten" />
-        </div>
-        
-        <!-- Nur im XML-Modus sichtbar -->
-        <div class="modal-field" id="xmlRootField" style="display: none;">
-            <label for="xmlRootTag">Root-XML-Tag (Haupt-Container):</label>
-            <input type="text" id="xmlRootTag" placeholder="z. B. staaten_liste" />
-        </div>
-
-        <div class="modal-field">
-            <label for="rowItemName">Name des Zeilen-Items (Row Object Tag):</label>
-            <input type="text" id="rowItemName" value="eintrag" placeholder="z. B. staat, zeile, item" />
-        </div>
-        
-        <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 15px 0;">
-        <label style="font-weight: bold; font-size: 14px; margin-bottom: 10px; display: block;">Spalten-Auswahl & Item-Namen:</label>
-        <div id="modalColumnsGrid" class="modal-grid"></div>
-
-        <div class="modal-actions">
-            <button class="btn-cancel" onclick="closeModal()">Abbrechen</button>
-            <button class="btn-sec" id="modalConfirmBtn" onclick="executeExport()">Herunterladen</button>
-        </div>
-    </div>
-</div>
-
-<script>
 let extractedTablesData = [];
 let currentExportTableIndex = null;
 let currentExportFormat = 'json';
@@ -122,6 +32,82 @@ function findPrecedingHeading(table) {
         if (current && current.tagName === 'BODY') break;
     }
     return '';
+}
+
+/**
+ * Parst mehrzeilige Tabellenköpfe (colspan & rowspan) über eine Grid-Matrix.
+ */
+function parseTableHeaders(rows) {
+    // 1. Alle reinen Header-Zeilen (tr mit nur th) am Anfang finden
+    let headerRows = [];
+    for (let r = 0; r < rows.length; r++) {
+        const ths = rows[r].querySelectorAll('th');
+        const tds = rows[r].querySelectorAll('td');
+        if (ths.length > 0 && tds.length === 0) {
+            headerRows.push(rows[r]);
+        } else {
+            break; // Erste Datenzeile erreicht
+        }
+    }
+
+    if (headerRows.length === 0) {
+        return { hasHeaders: false, headers: [], originalHeaders: [], dataStartRowIndex: 0 };
+    }
+
+    // 2. Grid-Matrix initialisieren
+    let grid = [];
+    
+    headerRows.forEach((tr, rowIndex) => {
+        if (!grid[rowIndex]) grid[rowIndex] = [];
+        const cells = Array.from(tr.children);
+        let colIndex = 0;
+
+        cells.forEach(cell => {
+            // Freie Position im Grid suchen (unter Berücksichtigung von rowspan aus vorherigen Zeilen)
+            while (grid[rowIndex][colIndex] !== undefined) {
+                colIndex++;
+            }
+
+            const text = removeFootnotes(cell.innerText);
+            const rowspan = parseInt(cell.getAttribute('rowspan') || '1', 10);
+            const colspan = parseInt(cell.getAttribute('colspan') || '1', 10);
+
+            for (let r = 0; r < rowspan; r++) {
+                const targetRow = rowIndex + r;
+                if (!grid[targetRow]) grid[targetRow] = [];
+                for (let c = 0; c < colspan; c++) {
+                    grid[targetRow][colIndex + c] = text;
+                }
+            }
+            colIndex += colspan;
+        });
+    });
+
+    // 3. Spaltennamen aus allen Matrix-Ebenen zusammensetzen
+    const maxCols = Math.max(...grid.map(row => row.length));
+    let originalHeaders = [];
+    let headers = [];
+
+    for (let c = 0; c < maxCols; c++) {
+        let parts = [];
+        for (let r = 0; r < grid.length; r++) {
+            const cellVal = grid[r][c];
+            if (cellVal && !parts.includes(cellVal)) {
+                parts.push(cellVal);
+            }
+        }
+        
+        const combinedOrig = parts.join(' - ') || `Spalte ${c + 1}`;
+        originalHeaders.push(combinedOrig);
+        headers.push(cleanTagName(parts.join(' '), c + 1));
+    }
+
+    return {
+        hasHeaders: true,
+        headers: headers,
+        originalHeaders: originalHeaders,
+        dataStartRowIndex: headerRows.length
+    };
 }
 
 async function fetchAndParse() {
@@ -187,18 +173,15 @@ function renderTableCard(table, index) {
 
     const sectionHeading = findPrecedingHeading(table) || `Tabelle ${index + 1}`;
 
-    let headers = [];
-    let originalHeaders = [];
-    const firstRowThs = rows[0].querySelectorAll('th');
-    const hasHeaders = firstRowThs.length > 0;
+    // Mehrzeilige Header verarbeiten
+    const headerResult = parseTableHeaders(rows);
+    let headers = headerResult.headers;
+    let originalHeaders = headerResult.originalHeaders;
+    const hasHeaders = headerResult.hasHeaders;
+    const startRowIndex = headerResult.dataStartRowIndex;
 
-    if (hasHeaders) {
-        firstRowThs.forEach((th, i) => {
-            const origText = removeFootnotes(th.innerText);
-            originalHeaders.push(origText);
-            headers.push(cleanTagName(origText, i + 1));
-        });
-    } else {
+    // Falls keine Header vorhanden waren, Standard-Headers für Zeile 0 generieren
+    if (!hasHeaders) {
         const firstRowCells = rows[0].querySelectorAll('td, th');
         firstRowCells.forEach((_, i) => {
             originalHeaders.push(`Spalte ${i + 1}`);
@@ -206,7 +189,6 @@ function renderTableCard(table, index) {
         });
     }
 
-    const startRowIndex = hasHeaders ? 1 : 0;
     const rawRowsData = [];
 
     for (let r = startRowIndex; r < rows.length; r++) {
@@ -249,7 +231,6 @@ function renderTableCard(table, index) {
         <span class="section-badge">Abschnitt: ${sectionHeading}</span>
         <div class="preview-wrapper">${previewHtml}</div>
         <div class="actions">
-            <!-- Beschriftung auf "JSON herunterladen" angepasst -->
             <button class="btn-sec" onclick="openExportModal(${index}, 'json')">JSON herunterladen</button>
             <button class="btn-sec" onclick="openExportModal(${index}, 'xml')">Export als XML</button>
         </div>
@@ -257,172 +238,3 @@ function renderTableCard(table, index) {
 
     container.appendChild(card);
 }
-
-function openExportModal(index, format) {
-    currentExportTableIndex = index;
-    currentExportFormat = format;
-    const tData = extractedTablesData[index];
-    
-    document.getElementById('modalTitle').innerText = format.toUpperCase() + ' Export Konfiguration';
-    document.getElementById('exportFileName').value = tData.exportFileName || tData.xmlRootTag;
-    document.getElementById('rowItemName').value = tData.rowItemName || "eintrag";
-    
-    const xmlRootField = document.getElementById('xmlRootField');
-    if (format === 'xml') {
-        xmlRootField.style.display = 'block';
-        document.getElementById('xmlRootTag').value = tData.xmlRootTag || "tabellen";
-    } else {
-        xmlRootField.style.display = 'none';
-    }
-
-    const grid = document.getElementById('modalColumnsGrid');
-    grid.innerHTML = '';
-
-    tData.headers.forEach((h, hIdx) => {
-        const cardDiv = document.createElement('div');
-        cardDiv.className = 'column-card';
-        cardDiv.innerHTML = `
-            <div class="column-header-row">
-                <input type="checkbox" id="colActive_${hIdx}" checked />
-                <label for="colActive_${hIdx}">Spalte ${hIdx + 1} einschließen</label>
-            </div>
-            <input type="text" id="colKeyInput_${hIdx}" value="${h}" placeholder="Key / Tag Name" />
-            <span style="display:block; font-size: 11px; color: #64748b; margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Orig: "${tData.originalHeaders[hIdx] || ''}"</span>
-        `;
-        grid.appendChild(cardDiv);
-    });
-
-    document.getElementById('exportModal').classList.add('active');
-}
-
-function closeModal() {
-    document.getElementById('exportModal').classList.remove('active');
-    currentExportTableIndex = null;
-}
-
-function executeExport() {
-    if (currentExportTableIndex === null) return;
-    
-    const index = currentExportTableIndex;
-    const tData = extractedTablesData[index];
-    
-    const rawFileName = document.getElementById('exportFileName').value;
-    const fileName = cleanTagName(rawFileName, index + 1) || `tabelle_${index + 1}`;
-    tData.exportFileName = fileName;
-
-    const rawRowName = document.getElementById('rowItemName').value;
-    const rowItemName = cleanTagName(rawRowName, 1) || "eintrag";
-    tData.rowItemName = rowItemName;
-
-    const activeIndices = [];
-    const activeHeaders = [];
-
-    tData.headers.forEach((_, hIdx) => {
-        const isActive = document.getElementById(`colActive_${hIdx}`).checked;
-        if (isActive) {
-            activeIndices.push(hIdx);
-            const keyVal = document.getElementById(`colKeyInput_${hIdx}`).value;
-            activeHeaders.push(cleanTagName(keyVal, hIdx + 1));
-        }
-    });
-
-    if (activeIndices.length === 0) {
-        alert('Bitte aktivieren Sie mindestens eine Spalte für den Export.');
-        return;
-    }
-
-    if (currentExportFormat === 'json') {
-        exportJSON(tData, activeIndices, activeHeaders, fileName, rowItemName);
-    } else {
-        const rawRootTag = document.getElementById('xmlRootTag').value;
-        const xmlRootTag = cleanTagName(rawRootTag, index + 1) || "tabellen";
-        tData.xmlRootTag = xmlRootTag;
-        exportXML(tData, activeIndices, activeHeaders, fileName, rowItemName, xmlRootTag);
-    }
-
-    closeModal();
-}
-
-function exportJSON(tData, activeIndices, activeHeaders, fileName, rowItemName) {
-    const list = [];
-
-    if (tData.hasHeaders) {
-        let headerObj = { 
-            "_attributes": { 
-                "header": "true",
-                "section": tData.sectionHeading 
-            } 
-        };
-        activeIndices.forEach((hIdx, i) => {
-            const hKey = activeHeaders[i];
-            headerObj[hKey] = tData.originalHeaders[hIdx] || hKey;
-        });
-        list.push(headerObj);
-    }
-
-    tData.rows.forEach(row => {
-        let itemObj = {};
-        activeIndices.forEach((hIdx, i) => {
-            const hKey = activeHeaders[i];
-            const val = row[hIdx] || '';
-            if (val !== '') {
-                itemObj[hKey] = val;
-            }
-        });
-        if (Object.keys(itemObj).length > 0) {
-            let containerObj = {};
-            containerObj[rowItemName] = itemObj;
-            list.push(containerObj);
-        }
-    });
-
-    const blob = new Blob([JSON.stringify(list, null, 4)], { type: 'application/json' });
-    downloadBlob(blob, `${fileName}.json`);
-}
-
-function exportXML(tData, activeIndices, activeHeaders, fileName, rowItemName, rootTagName) {
-    let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<${rootTagName} section="${tData.sectionHeading}">\n`;
-    
-    if (tData.hasHeaders) {
-        xml += `  <${rowItemName} header="true">\n`;
-        activeIndices.forEach((hIdx, i) => {
-            const hKey = activeHeaders[i];
-            const origVal = (tData.originalHeaders[hIdx] || hKey).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-            xml += `    <${hKey}>${origVal}</${hKey}>\n`;
-        });
-        xml += `  </${rowItemName}>\n`;
-    }
-
-    tData.rows.forEach(row => {
-        let rowXml = '';
-        activeIndices.forEach((hIdx, i) => {
-            const hKey = activeHeaders[i];
-            const val = row[hIdx] || '';
-            if (val !== '') {
-                const safeVal = val.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-                rowXml += `    <${hKey}>${safeVal}</${hKey}>\n`;
-            }
-        });
-        if (rowXml !== '') {
-            xml += `  <${rowItemName}>\n` + rowXml + `  </${rowItemName}>\n`;
-        }
-    });
-    
-    xml += `</${rootTagName}>`;
-
-    const blob = new Blob([xml], { type: 'application/xml' });
-    downloadBlob(blob, `${fileName}.xml`);
-}
-
-function downloadBlob(blob, filename) {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
-}
-</script>
-
-</body>
-</html>
