@@ -49,7 +49,7 @@
 <div class="container">
     <h1>Wiki Tabellen Extraktor</h1>
     <div class="input-group">
-        <input type="text" id="wikiUrl" class="url-input" placeholder="Wikipedia-URL eingeben (z. B. https://de.wikipedia.org/wiki/Liste_der_Staaten_der_Erde)" />
+        <input type="text" id="wikiUrl" class="url-input" placeholder="Wikipedia-URL eingeben (z. B. https://de.wikipedia.org/wiki/Gedenkm%C3%BCnzen_der_Bundesrepublik_Deutschland)" />
         <button onclick="fetchAndParse()">Tabellen laden</button>
     </div>
     <div id="status"></div>
@@ -62,18 +62,18 @@
         <h2 id="modalTitle">Export Konfiguration</h2>
         <div class="modal-field">
             <label for="exportFileName">Ziel-Dateiname (ohne Endung):</label>
-            <input type="text" id="exportFileName" placeholder="z. B. von_der_uno_anerkannte_staaten" />
+            <input type="text" id="exportFileName" placeholder="z. B. gedenkmünzen" />
         </div>
         
         <!-- Nur im XML-Modus sichtbar -->
         <div class="modal-field" id="xmlRootField" style="display: none;">
             <label for="xmlRootTag">Root-XML-Tag (Haupt-Container):</label>
-            <input type="text" id="xmlRootTag" placeholder="z. B. staaten_liste" />
+            <input type="text" id="xmlRootTag" placeholder="z. B. münzen_liste" />
         </div>
 
         <div class="modal-field">
             <label for="rowItemName">Name des Zeilen-Items (Row Object Tag):</label>
-            <input type="text" id="rowItemName" value="eintrag" placeholder="z. B. staat, zeile, item" />
+            <input type="text" id="rowItemName" value="eintrag" placeholder="z. B. münze, zeile, item" />
         </div>
         
         <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 15px 0;">
@@ -128,7 +128,6 @@ function findPrecedingHeading(table) {
  * Parst mehrzeilige Tabellenköpfe (colspan & rowspan) über eine Grid-Matrix.
  */
 function parseTableHeaders(rows) {
-    // 1. Alle reinen Header-Zeilen (tr mit nur th) am Anfang finden
     let headerRows = [];
     for (let r = 0; r < rows.length; r++) {
         const ths = rows[r].querySelectorAll('th');
@@ -136,7 +135,7 @@ function parseTableHeaders(rows) {
         if (ths.length > 0 && tds.length === 0) {
             headerRows.push(rows[r]);
         } else {
-            break; // Erste Datenzeile erreicht
+            break;
         }
     }
 
@@ -144,7 +143,6 @@ function parseTableHeaders(rows) {
         return { hasHeaders: false, headers: [], originalHeaders: [], dataStartRowIndex: 0 };
     }
 
-    // 2. Grid-Matrix initialisieren
     let grid = [];
     
     headerRows.forEach((tr, rowIndex) => {
@@ -153,7 +151,6 @@ function parseTableHeaders(rows) {
         let colIndex = 0;
 
         cells.forEach(cell => {
-            // Freie Position im Grid suchen (unter Berücksichtigung von rowspan aus vorherigen Zeilen)
             while (grid[rowIndex][colIndex] !== undefined) {
                 colIndex++;
             }
@@ -173,7 +170,6 @@ function parseTableHeaders(rows) {
         });
     });
 
-    // 3. Spaltennamen aus allen Matrix-Ebenen zusammensetzen
     const maxCols = Math.max(...grid.map(row => row.length));
     let originalHeaders = [];
     let headers = [];
@@ -263,14 +259,12 @@ function renderTableCard(table, index) {
 
     const sectionHeading = findPrecedingHeading(table) || `Tabelle ${index + 1}`;
 
-    // Mehrzeilige Header verarbeiten
     const headerResult = parseTableHeaders(rows);
     let headers = headerResult.headers;
     let originalHeaders = headerResult.originalHeaders;
     const hasHeaders = headerResult.hasHeaders;
     const startRowIndex = headerResult.dataStartRowIndex;
 
-    // Falls keine Header vorhanden waren, Standard-Headers für Zeile 0 generieren
     if (!hasHeaders) {
         const firstRowCells = rows[0].querySelectorAll('td, th');
         firstRowCells.forEach((_, i) => {
@@ -327,6 +321,171 @@ function renderTableCard(table, index) {
     `;
 
     container.appendChild(card);
+}
+
+function openExportModal(index, format) {
+    currentExportTableIndex = index;
+    currentExportFormat = format;
+    const tData = extractedTablesData[index];
+    
+    document.getElementById('modalTitle').innerText = format.toUpperCase() + ' Export Konfiguration';
+    document.getElementById('exportFileName').value = tData.exportFileName || tData.xmlRootTag;
+    document.getElementById('rowItemName').value = tData.rowItemName || "eintrag";
+    
+    const xmlRootField = document.getElementById('xmlRootField');
+    if (format === 'xml') {
+        xmlRootField.style.display = 'block';
+        document.getElementById('xmlRootTag').value = tData.xmlRootTag || "tabellen";
+    } else {
+        xmlRootField.style.display = 'none';
+    }
+
+    const grid = document.getElementById('modalColumnsGrid');
+    grid.innerHTML = '';
+
+    tData.headers.forEach((h, hIdx) => {
+        const cardDiv = document.createElement('div');
+        cardDiv.className = 'column-card';
+        cardDiv.innerHTML = `
+            <div class="column-header-row">
+                <input type="checkbox" id="colActive_${hIdx}" checked />
+                <label for="colActive_${hIdx}">Spalte ${hIdx + 1} einschließen</label>
+            </div>
+            <input type="text" id="colKeyInput_${hIdx}" value="${h}" placeholder="Key / Tag Name" />
+            <span style="display:block; font-size: 11px; color: #64748b; margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Orig: "${tData.originalHeaders[hIdx] || ''}"</span>
+        `;
+        grid.appendChild(cardDiv);
+    });
+
+    document.getElementById('exportModal').classList.add('active');
+}
+
+function closeModal() {
+    document.getElementById('exportModal').classList.remove('active');
+    currentExportTableIndex = null;
+}
+
+function executeExport() {
+    if (currentExportTableIndex === null) return;
+    
+    const index = currentExportTableIndex;
+    const tData = extractedTablesData[index];
+    
+    const rawFileName = document.getElementById('exportFileName').value;
+    const fileName = cleanTagName(rawFileName, index + 1) || `tabelle_${index + 1}`;
+    tData.exportFileName = fileName;
+
+    const rawRowName = document.getElementById('rowItemName').value;
+    const rowItemName = cleanTagName(rawRowName, 1) || "eintrag";
+    tData.rowItemName = rowItemName;
+
+    const activeIndices = [];
+    const activeHeaders = [];
+
+    tData.headers.forEach((_, hIdx) => {
+        const isActive = document.getElementById(`colActive_${hIdx}`).checked;
+        if (isActive) {
+            activeIndices.push(hIdx);
+            const keyVal = document.getElementById(`colKeyInput_${hIdx}`).value;
+            activeHeaders.push(cleanTagName(keyVal, hIdx + 1));
+        }
+    });
+
+    if (activeIndices.length === 0) {
+        alert('Bitte aktivieren Sie mindestens eine Spalte für den Export.');
+        return;
+    }
+
+    if (currentExportFormat === 'json') {
+        exportJSON(tData, activeIndices, activeHeaders, fileName, rowItemName);
+    } else {
+        const rawRootTag = document.getElementById('xmlRootTag').value;
+        const xmlRootTag = cleanTagName(rawRootTag, index + 1) || "tabellen";
+        tData.xmlRootTag = xmlRootTag;
+        exportXML(tData, activeIndices, activeHeaders, fileName, rowItemName, xmlRootTag);
+    }
+
+    closeModal();
+}
+
+function exportJSON(tData, activeIndices, activeHeaders, fileName, rowItemName) {
+    const list = [];
+
+    if (tData.hasHeaders) {
+        let headerObj = { 
+            "_attributes": { 
+                "header": "true",
+                "section": tData.sectionHeading 
+            } 
+        };
+        activeIndices.forEach((hIdx, i) => {
+            const hKey = activeHeaders[i];
+            headerObj[hKey] = tData.originalHeaders[hIdx] || hKey;
+        });
+        list.push(headerObj);
+    }
+
+    tData.rows.forEach(row => {
+        let itemObj = {};
+        activeIndices.forEach((hIdx, i) => {
+            const hKey = activeHeaders[i];
+            const val = row[hIdx] || '';
+            if (val !== '') {
+                itemObj[hKey] = val;
+            }
+        });
+        if (Object.keys(itemObj).length > 0) {
+            let containerObj = {};
+            containerObj[rowItemName] = itemObj;
+            list.push(containerObj);
+        }
+    });
+
+    const blob = new Blob([JSON.stringify(list, null, 4)], { type: 'application/json' });
+    downloadBlob(blob, `${fileName}.json`);
+}
+
+function exportXML(tData, activeIndices, activeHeaders, fileName, rowItemName, rootTagName) {
+    let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<${rootTagName} section="${tData.sectionHeading}">\n`;
+    
+    if (tData.hasHeaders) {
+        xml += `  <${rowItemName} header="true">\n`;
+        activeIndices.forEach((hIdx, i) => {
+            const hKey = activeHeaders[i];
+            const origVal = (tData.originalHeaders[hIdx] || hKey).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            xml += `    <${hKey}>${origVal}</${hKey}>\n`;
+        });
+        xml += `  </${rowItemName}>\n`;
+    }
+
+    tData.rows.forEach(row => {
+        let rowXml = '';
+        activeIndices.forEach((hIdx, i) => {
+            const hKey = activeHeaders[i];
+            const val = row[hIdx] || '';
+            if (val !== '') {
+                const safeVal = val.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                rowXml += `    <${hKey}>${safeVal}</${hKey}>\n`;
+            }
+        });
+        if (rowXml !== '') {
+            xml += `  <${rowItemName}>\n` + rowXml + `  </${rowItemName}>\n`;
+        }
+    });
+    
+    xml += `</${rootTagName}>`;
+
+    const blob = new Blob([xml], { type: 'application/xml' });
+    downloadBlob(blob, `${fileName}.xml`);
+}
+
+function downloadBlob(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const a = document.append ? document.createElement('a') : document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
 }
 </script>
 
