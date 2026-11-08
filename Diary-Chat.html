@@ -1092,16 +1092,20 @@ dialog .list .it .sz{margin-left:auto;color:var(--mute);white-space:nowrap}
       b.disabled=!gh.ok;b.title=gh.ok?'':'Erst über das Zahnrad verbinden.';
     });
   }
+  /* eigene Schlüssel für Diary-Chat; frühere Einstellungen von XPath-GH-Chat liefern nur Repository und Branch, nie den Ordner oder das Token */
   function ghLoadCfg(){
-    try{var c=JSON.parse(localStorage.getItem('xpathghchat.cfg')||'{}');
-      gh.repo=c.repo||'';gh.folder=c.folder==null?'diary':c.folder;gh.branch=c.branch||'';gh.keep=!!c.keep;}catch(e){}
-    try{gh.token=(gh.keep?localStorage.getItem('xpathghchat.token'):sessionStorage.getItem('xpathghchat.token'))||'';}catch(e){}
+    try{
+      var raw=localStorage.getItem('diarychat.cfg'),c;
+      if(raw!==null){c=JSON.parse(raw||'{}');gh.repo=c.repo||'';gh.folder=c.folder==null?'diary':c.folder;gh.branch=c.branch||'';gh.keep=!!c.keep;}
+      else{c=JSON.parse(localStorage.getItem('xpathghchat.cfg')||'{}');gh.repo=c.repo||'';gh.folder='diary';gh.branch=c.branch||'';gh.keep=false;}
+    }catch(e){}
+    try{gh.token=(gh.keep?localStorage.getItem('diarychat.token'):sessionStorage.getItem('diarychat.token'))||'';}catch(e){}
   }
   function ghSaveCfg(){
-    try{localStorage.setItem('xpathghchat.cfg',JSON.stringify({repo:gh.repo,folder:gh.folder,branch:gh.branch,keep:gh.keep}));}catch(e){}
+    try{localStorage.setItem('diarychat.cfg',JSON.stringify({repo:gh.repo,folder:gh.folder,branch:gh.branch,keep:gh.keep}));}catch(e){}
     try{
-      localStorage.removeItem('xpathghchat.token');sessionStorage.removeItem('xpathghchat.token');
-      if(gh.token)(gh.keep?localStorage:sessionStorage).setItem('xpathghchat.token',gh.token);
+      localStorage.removeItem('diarychat.token');sessionStorage.removeItem('diarychat.token');
+      if(gh.token)(gh.keep?localStorage:sessionStorage).setItem('diarychat.token',gh.token);
     }catch(e){}
   }
   function ghFill(){
