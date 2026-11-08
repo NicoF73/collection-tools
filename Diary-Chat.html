@@ -1,0 +1,1575 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Diary-Chat</title>
+<style>
+:root{--bg:#f3f5f4;--panel:#fff;--ink:#1d2624;--mute:#6b7774;--line:#d5dcda;--acc:#0f6b5c;--accink:#fff;--me:#dcefe9;--err:#b3261e;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141918;--panel:#1c2321;--ink:#e4ebe9;--mute:#8a9895;--line:#2e3836;--acc:#4fc3ad;--accink:#0b1f1b;--me:#21403a;--err:#f2b8b5}}
+:root[data-theme="dark"]{--bg:#141918;--panel:#1c2321;--ink:#e4ebe9;--mute:#8a9895;--line:#2e3836;--acc:#4fc3ad;--accink:#0b1f1b;--me:#21403a;--err:#f2b8b5}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:15px/1.5 "Segoe UI",system-ui,sans-serif}
+main{display:grid;grid-template-columns:1fr 1fr;gap:12px;height:100%;padding:12px}
+section{background:var(--panel);border:1px solid var(--line);border-radius:8px;display:flex;flex-direction:column;min-height:0;min-width:0}
+h2{margin:0;padding:10px 14px;font-size:15px;font-weight:600;border-bottom:1px solid var(--line)}
+#log{flex:1;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:8px}
+.msg{max-width:90%;padding:8px 12px;border-radius:8px;white-space:pre-wrap;word-break:break-word;font-family:Consolas,"Courier New",monospace;font-size:13.5px}
+.me{align-self:flex-end;background:var(--me)}
+.bot{align-self:flex-start;border:1px solid var(--line)}
+.bot.err{color:var(--err)}
+.hint{color:var(--mute);font-family:inherit;font-size:14px}
+.msg .body{display:block}
+.msg.collapsed .body{max-height:calc(10 * 1.5em);overflow:hidden}
+.tog{display:block;margin-top:6px;padding:2px 10px;font-size:12.5px}
+.acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.acts button{padding:2px 10px;font-size:12.5px}
+.acts .tog{display:inline-block;margin:0}
+.split{position:relative;display:inline-flex}
+.split>button.primary:first-child{border-top-right-radius:0;border-bottom-right-radius:0}
+.split>.caret{border-top-left-radius:0;border-bottom-left-radius:0;margin-left:-1px;padding:8px 9px;background:var(--acc);color:var(--accink);border-color:var(--acc);border-left:1px solid rgba(255,255,255,.35)}
+.menu{position:absolute;top:calc(100% + 4px);left:0;z-index:20;min-width:100%;display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:4px;box-shadow:0 4px 14px rgba(0,0,0,.18)}
+.menu[hidden]{display:none}
+.menu button{border:none;text-align:left;white-space:nowrap;padding:7px 12px;background:transparent}
+.menu button:hover,.menu button:focus-visible{background:var(--me)}
+#xsd{overflow:auto;padding:12px 14px}
+#xsd .row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;align-items:center}
+#xsd .row input[type=text]{flex:1;min-width:8rem;max-width:16rem;padding:6px 9px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);font:13px Consolas,"Courier New",monospace}
+#xsd .row button{padding:5px 12px;font-size:13px}
+#xsd .chk{display:flex;gap:8px;align-items:center;margin-top:12px}
+#xsd .note{color:var(--mute);font-size:13px;margin:10px 0 0;max-width:62ch}
+#xsd .status{margin-top:10px}
+#xsd .lbl{font-size:13px;color:var(--mute)}
+.errlist{list-style:none;margin:8px 0 0;padding:0}
+.errlist li{margin:0 0 4px}
+.errlist button{display:block;width:100%;text-align:left;padding:5px 8px;font-size:12.5px;line-height:1.4;border-radius:6px}
+.errlist code{display:block;font:12.5px Consolas,"Courier New",monospace;color:var(--acc);word-break:break-all}
+.errlist span{display:block;color:var(--ink)}
+section.drop{outline:2px dashed var(--acc);outline-offset:-6px}
+form{display:flex;gap:8px;padding:10px;border-top:1px solid var(--line)}
+input[type=text]{flex:1;min-width:0;padding:9px 11px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);font:13.5px Consolas,"Courier New",monospace}
+button{padding:8px 16px;border-radius:6px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font:inherit;cursor:pointer}
+button.primary{background:var(--acc);color:var(--accink);border-color:var(--acc)}
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.bar{display:flex;gap:8px;padding:10px 14px;border-bottom:1px solid var(--line);align-items:center}
+.bar span{margin-left:auto;flex:1 1 0;min-width:2.5rem;text-align:right;color:var(--mute);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#xml,#editin{flex:1;margin:10px;padding:10px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);font:13px/1.45 Consolas,"Courier New",monospace;resize:none;min-height:0}
+.tabs{display:flex;flex-wrap:wrap;gap:4px;padding:8px 10px 0;border-bottom:1px solid var(--line)}
+.tab{border:1px solid transparent;border-bottom:none;border-radius:6px 6px 0 0;padding:6px 14px;background:transparent;color:var(--mute);margin-bottom:-1px}
+.tab[aria-selected="true"]{background:var(--panel);color:var(--ink);border-color:var(--line);border-bottom:1px solid var(--panel);font-weight:600}
+.filt{display:flex;gap:6px 14px;flex-wrap:wrap;align-items:center;padding:10px 14px 0;font-size:13.5px}
+.filt label{display:flex;gap:6px;align-items:center}
+.filt input[type=date]{padding:4px 7px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);font:13px Consolas,"Courier New",monospace;color-scheme:light dark}
+.filt button{padding:4px 10px;font-size:13px}
+.fstat{padding:4px 14px 0;font-size:13px;color:var(--mute);min-height:1.5em}
+.fstat.err{color:var(--err)}
+.editbar2{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:10px 14px 0}
+.editbar2 button{padding:5px 12px;font-size:13px}
+#tplmenu,#submenu{max-height:55vh;overflow:auto}
+#submenu{min-width:16rem}
+.menuhead{padding:6px 12px;color:var(--mute);font-size:12.5px;max-width:22rem}
+.editbar{padding:0 14px 10px}
+#editmsg{margin:0 14px 12px;white-space:pre-wrap;word-break:break-word;max-height:35%;overflow:auto;font-size:13px}
+.pane{flex:1;min-height:0;display:flex;flex-direction:column}
+.pane[hidden]{display:none}
+#struct{overflow:auto;padding:12px 14px}
+#struct h3{margin:14px 0 6px;font-size:14px}
+#struct h3:first-child{margin-top:0}
+#struct table{border-collapse:collapse;font:13px Consolas,"Courier New",monospace}
+#struct td{padding:2px 14px 2px 0}
+#struct td.n{text-align:right;color:var(--mute)}
+#struct ul{margin:0;padding:0;list-style:none;font:13px/1.6 Consolas,"Courier New",monospace}
+#struct .hint{color:var(--mute)}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+#elems{overflow:auto;padding:12px 14px}
+#elems h3{margin:0 0 6px;font-size:14px}
+#elems table{border-collapse:collapse;font:13px Consolas,"Courier New",monospace}
+#elems td{padding:2px 14px 2px 0}
+#elems td.n{text-align:right;color:var(--mute)}
+#elems .hint{color:var(--mute)}
+.chead{display:flex;align-items:center;gap:8px;padding-right:10px;border-bottom:1px solid var(--line)}
+.chead h2{flex:1;border-bottom:none}
+.chead button{padding:5px 10px;font-size:13px}
+.chead{flex-wrap:wrap}
+.chead button{margin:4px 0}
+.bar{flex-wrap:wrap}
+button:disabled{opacity:.5;cursor:not-allowed}
+#gh{overflow:auto;padding:12px 14px}
+#gh label{display:block;margin:10px 0 3px;font-size:13.5px}
+#gh input[type=text],#gh input[type=password]{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);font:13px Consolas,"Courier New",monospace}
+#gh .chk{display:flex;gap:8px;align-items:center;margin-top:10px}
+#gh .chk label{margin:0}
+#gh .row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+#gh .note{color:var(--mute);font-size:13px;margin:12px 0 0;max-width:62ch}
+.status{margin-top:12px;font-size:13.5px;min-height:1.5em}
+.status.ok{color:var(--acc)}
+.status.err{color:var(--err)}
+dialog{border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink);padding:16px;width:min(460px,92vw)}
+dialog::backdrop{background:rgba(0,0,0,.4)}
+dialog h3{margin:0 0 10px;font-size:15px}
+dialog label{display:block;margin:8px 0 3px;font-size:13.5px}
+dialog input[type=text]{width:100%}
+dialog .list{max-height:260px;overflow:auto;border:1px solid var(--line);border-radius:6px;padding:6px 10px;margin-top:8px}
+dialog .list label{display:flex;gap:8px;align-items:center;margin:0;padding:3px 0;font:13px Consolas,"Courier New",monospace}
+dialog .list .sz{margin-left:auto;color:var(--mute)}
+dialog .row{display:flex;gap:8px;margin-top:14px}
+dialog .sp{flex:1}
+dialog .list .it{display:flex;gap:8px;padding:3px 0;font:13px Consolas,"Courier New",monospace}
+dialog .list .it .sz{margin-left:auto;color:var(--mute);white-space:nowrap}
+#dgh{width:min(560px,94vw);max-height:90vh;overflow:auto}
+#dgh #gh{padding:0}
+#ghset{padding:5px 10px;font-size:16px;line-height:1}
+@media (max-width:720px){main{grid-template-columns:1fr;grid-template-rows:1fr 1fr}}
+</style>
+</head>
+<body>
+<main>
+  <section aria-label="Diary-Chat">
+    <div class="chead">
+      <h2>Diary Abfrage</h2>
+      <button id="exp" type="button">Als .md exportieren</button>
+      <button id="expgh" type="button" disabled title="Erst über das Zahnrad verbinden.">Nach GitHub</button>
+      <button id="clr" type="button">Chat leeren</button>
+    </div>
+    <div id="log" aria-live="polite"></div>
+    <form id="f">
+      <input type="text" id="q" placeholder="XPath eingeben, z. B. //item/@id" autocomplete="off" spellcheck="false">
+      <button class="primary" type="submit">Senden</button>
+    </form>
+  </section>
+  <section aria-label="XML">
+    <div class="bar">
+      <button id="clear" type="button">Clear</button>
+      <div class="split" id="split">
+        <button id="import" type="button" class="primary" title="XML-Datei importieren">Import</button>
+        <button id="impmenu" type="button" class="caret" aria-haspopup="menu" aria-expanded="false" aria-controls="impmenulist" aria-label="Weitere Importformate">▾</button>
+        <div class="menu" id="impmenulist" role="menu" hidden>
+          <button type="button" role="menuitem" id="impxml">Import XML</button>
+          <button type="button" role="menuitem" id="impjson">Import JSON</button>
+        </div>
+      </div>
+      <div class="split" id="xsplit">
+        <button id="xexp" type="button" class="primary" title="Export XML full (lokal speichern)">Export</button>
+        <button id="xexpmenu" type="button" class="caret" aria-haspopup="menu" aria-expanded="false" aria-controls="xexpmenulist" aria-label="Weitere Exportformate">&#9662;</button>
+        <div class="menu" id="xexpmenulist" role="menu" hidden>
+          <button type="button" role="menuitem" id="xefull">Export XML full</button>
+          <button type="button" role="menuitem" id="xefullgh" class="gh-only" disabled>Export XML full nach GitHub</button>
+          <button type="button" role="menuitem" id="xestr">Export XML structured</button>
+          <button type="button" role="menuitem" id="xestrgh" class="gh-only" disabled>Export XML structured nach GitHub</button>
+        </div>
+      </div>
+      <button id="impgh" type="button" disabled title="Erst über das Zahnrad verbinden.">GitHub-Import</button>
+      <span id="fname">Keine Datei geladen</span>
+      <button id="ghset" type="button" aria-label="GitHub-Einstellungen" title="GitHub-Einstellungen">&#9881;</button>
+      <input type="file" id="file" multiple accept=".xml,text/xml,application/xml" hidden>
+      <input type="file" id="filejson" multiple accept=".json,application/json" hidden>
+    </div>
+    <div class="tabs" role="tablist">
+      <button type="button" class="tab" role="tab" id="t6" aria-selected="false" aria-controls="p6">Edit</button>
+      <button type="button" class="tab" role="tab" id="t1" aria-selected="true" aria-controls="p1">XML</button>
+      <button type="button" class="tab" role="tab" id="t2" aria-selected="false" aria-controls="p2">Struktur</button>
+      <button type="button" class="tab" role="tab" id="t3" aria-selected="false" aria-controls="p3">XML-Elemente</button>
+      <button type="button" class="tab" role="tab" id="t5" aria-selected="false" aria-controls="p5">XSD</button>
+    </div>
+    <div class="pane" id="p6" role="tabpanel" aria-labelledby="t6" hidden>
+      <div class="editbar2">
+        <button id="editclear" type="button">Clear</button>
+        <div class="split" id="tplsplit">
+          <button id="tplbtn" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="tplmenu" disabled title="Erst im Tab „XSD“ ein Schema laden.">Add item template &#9662;</button>
+          <div class="menu" id="tplmenu" role="menu" hidden></div>
+        </div>
+        <div class="split" id="subsplit">
+          <button id="subbtn" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="submenu" disabled title="Erst im Tab „XSD“ ein Schema laden.">Add sub-item template &#9662;</button>
+          <div class="menu" id="submenu" role="menu" hidden></div>
+        </div>
+      </div>
+      <textarea id="editin" spellcheck="false" placeholder="XML-Elemente einfügen, die ans Ende des geladenen XML kommen. Mehrere Elemente nebeneinander sind erlaubt."></textarea>
+      <div class="editbar"><button id="editadd" type="button" class="primary">Add</button></div>
+      <div class="status" id="editmsg" role="status"></div>
+    </div>
+    <div class="pane" id="p1" role="tabpanel" aria-labelledby="t1">
+      <div class="filt" role="group" aria-label="Datumsfilter">
+        <label>Von <input type="date" id="fromd"></label>
+        <label>bis <input type="date" id="tod"></label>
+        <label><input type="checkbox" id="undated"> Einträge ohne Datum anzeigen</label>
+        <label><input type="checkbox" id="nocomm"> XML-Kommentare ausblenden</label>
+        <button type="button" id="fclear">Zurücksetzen</button>
+      </div>
+      <div class="fstat" id="fstat" role="status"></div>
+      <textarea id="xml" readonly placeholder="Importierte XML-Datei erscheint hier."></textarea>
+    </div>
+    <div class="pane" id="p2" role="tabpanel" aria-labelledby="t2" hidden>
+      <div id="struct"></div>
+    </div>
+    <div class="pane" id="p3" role="tabpanel" aria-labelledby="t3" hidden>
+      <div id="elems"></div>
+    </div>
+    <div class="pane" id="p5" role="tabpanel" aria-labelledby="t5" hidden>
+      <div id="xsd">
+        <div class="row">
+          <button id="xsdload" type="button" class="primary">XSD laden</button>
+          <input type="file" id="xsdfile" accept=".xsd,.xml,text/xml,application/xml" hidden>
+          <button id="xsdclear" type="button">Schema entfernen</button>
+        </div>
+        <div class="row">
+          <button id="xsdgh" type="button" disabled title="Erst über das Zahnrad verbinden.">Aus GitHub laden</button>
+          <label class="lbl" for="xsdghname">Datei im Ordner</label>
+          <input type="text" id="xsdghname" value="diary.xsd" autocomplete="off" spellcheck="false">
+        </div>
+        <div class="status" id="xsdinfo" role="status"></div>
+        <div id="xsdnotes"></div>
+        <div class="chk"><input type="checkbox" id="xsdauto"><label for="xsdauto">Beim Import automatisch prüfen</label></div>
+        <div class="row"><button id="xsdrun" type="button" class="primary" disabled>Jetzt prüfen</button></div>
+        <div class="status" id="xsdmsg" role="status"></div>
+        <div id="xsdres"></div>
+      </div>
+    </div>
+  </section>
+</main>
+<dialog id="dgh">
+  <h3>GitHub-Einstellungen</h3>
+  <div id="gh">
+    <label for="ghrepo">Repository (Besitzer/Name)</label>
+    <input type="text" id="ghrepo" placeholder="meinname/xpath-daten" autocomplete="off" spellcheck="false">
+    <label for="ghfolder">Ordner im Repository (leer = Hauptebene)</label>
+    <input type="text" id="ghfolder" placeholder="diary" autocomplete="off" spellcheck="false">
+    <label for="ghbranch">Branch (leer = Standard-Branch)</label>
+    <input type="text" id="ghbranch" autocomplete="off" spellcheck="false">
+    <label for="ghtoken">Zugriffstoken</label>
+    <input type="password" id="ghtoken" autocomplete="off" spellcheck="false">
+    <div class="chk"><input type="checkbox" id="ghkeep"><label for="ghkeep">Token in diesem Browser merken (localStorage)</label></div>
+    <div class="row">
+      <button id="ghsave" type="button" class="primary">Speichern und testen</button>
+      <button id="ghforget" type="button">Token vergessen</button>
+    </div>
+    <div class="status" id="ghstatus" role="status"></div>
+    <p class="note">Lege in GitHub unter Settings, Developer settings ein „Fine-grained personal access token“ an: nur für dieses eine Repository, Berechtigung „Contents: Read and write“, mit Ablaufdatum. Nutze ein privates Repository für die Daten, denn in einem öffentlichen wären sie für alle lesbar. Importiert werden die .xml-Dateien des Ordners, exportierte Chats landen als .md im selben Ordner. Ohne Merken gilt das Token nur für diesen Tab.</p>
+  </div>
+  <div class="row">
+    <span class="sp"></span>
+    <button id="ghclose" type="button" class="primary">Schließen</button>
+  </div>
+</dialog>
+<dialog id="dimp">
+  <h3>Aus GitHub laden</h3>
+  <div class="status" id="dimpinfo"></div>
+  <div class="list" id="dimplist"></div>
+  <div class="row">
+    <button id="dimpall" type="button">Alle auswählen</button>
+    <span class="sp"></span>
+    <button id="dimpcancel" type="button">Abbrechen</button>
+    <button id="dimpok" type="button" class="primary" disabled>Laden</button>
+  </div>
+</dialog>
+<dialog id="dexm">
+  <h3 id="dexmh">XML nach GitHub exportieren</h3>
+  <div id="dexmtarget" class="status"></div>
+  <div class="list" id="dexmlist"></div>
+  <div class="status" id="dexminfo"></div>
+  <div class="row">
+    <span class="sp"></span>
+    <button id="dexmcancel" type="button">Abbrechen</button>
+    <button id="dexmok" type="button" class="primary" disabled>Speichern</button>
+  </div>
+</dialog>
+<dialog id="dexp">
+  <h3>Chat nach GitHub exportieren</h3>
+  <div id="dexptarget" class="status"></div>
+  <label for="dexpname">Dateiname</label>
+  <input type="text" id="dexpname" autocomplete="off" spellcheck="false">
+  <div class="status" id="dexpinfo"></div>
+  <div class="row">
+    <span class="sp"></span>
+    <button id="dexpcancel" type="button">Abbrechen</button>
+    <button id="dexpok" type="button" class="primary">Speichern</button>
+  </div>
+</dialog>
+<script>
+(function(){
+  var log=document.getElementById('log'),q=document.getElementById('q'),xml=document.getElementById('xml'),
+      file=document.getElementById('file'),fname=document.getElementById('fname'),doc=null,view=null,xmlFull='',msgs=[],history=loadHist(),hi=0,draft='',tabMatches=null,tabIdx=0,tabBase='';
+
+  var HKEY='xpathchat.history',HMAX=200;
+  function loadHist(){
+    try{var a=JSON.parse(localStorage.getItem('xpathchat.history')||'[]');
+      return Array.isArray(a)?a.filter(function(x){return typeof x==='string'&&x;}).slice(-200):[];}
+    catch(e){return [];}
+  }
+  function pushHist(x){
+    history=history.filter(function(h){return h!==x;});history.push(x);
+    if(history.length>HMAX)history=history.slice(-HMAX);
+    try{localStorage.setItem(HKEY,JSON.stringify(history));}catch(e){}
+  }
+
+  function add(text,cls,extra){
+    var d=document.createElement('div'),lines=text.split('\n').length,acts=null;
+    if(cls.indexOf('hint')<0)msgs.push({text:text,cls:cls});
+    d.className='msg '+cls;
+    function actions(){if(!acts){acts=document.createElement('div');acts.className='acts';}return acts;}
+    if(cls.indexOf('bot')>-1&&cls.indexOf('hint')<0&&lines>10){
+      d.classList.add('collapsed');
+      var b=document.createElement('span');b.className='body';b.textContent=text;d.appendChild(b);
+      var t=document.createElement('button');t.type='button';t.className='tog';t.textContent='Aufklappen ('+(lines-10)+' weitere Zeilen)';
+      t.onclick=function(){
+        var c=d.classList.toggle('collapsed');
+        t.textContent=c?'Aufklappen ('+(lines-10)+' weitere Zeilen)':'Zusammenklappen';
+      };
+      actions().appendChild(t);
+    }else d.textContent=text;
+    if(extra&&extra.elems&&extra.elems.length)addExportButtons(actions(),extra);
+    if(acts)d.appendChild(acts);
+    log.appendChild(d);log.scrollTop=log.scrollHeight;
+  }
+  function hint(){add('Importiere rechts eine XML-Datei und gib dann XPath-Ausdrücke ein.','bot hint');}
+  hint();
+
+  var filejson=document.getElementById('filejson'),impmenu=document.getElementById('impmenu'),menulist=document.getElementById('impmenulist');
+  function menuOpen(o){if(o&&typeof xmenuOpen==='function')xmenuOpen(false);menulist.hidden=!o;impmenu.setAttribute('aria-expanded',o?'true':'false');if(o)document.getElementById('impxml').focus();}
+  document.getElementById('import').onclick=function(){menuOpen(false);file.click();};
+  impmenu.onclick=function(e){e.stopPropagation();menuOpen(menulist.hidden);};
+  document.getElementById('impxml').onclick=function(){menuOpen(false);file.click();};
+  document.getElementById('impjson').onclick=function(){menuOpen(false);filejson.click();};
+  document.addEventListener('click',function(e){if(!menulist.hidden&&!document.getElementById('split').contains(e.target))menuOpen(false);});
+  document.addEventListener('keydown',function(e){if(e.key==='Escape'&&!menulist.hidden){menuOpen(false);impmenu.focus();}});
+
+  function selectTab(n){
+    [6,1,2,3,5].forEach(function(i){
+      document.getElementById('t'+i).setAttribute('aria-selected',i===n?'true':'false');
+      document.getElementById('p'+i).hidden=(i!==n);
+    });
+  }
+  [6,1,2,3,5].forEach(function(i){document.getElementById('t'+i).onclick=function(){selectTab(i);};});
+
+  function renderStructure(){
+    var el=document.getElementById('struct'),el2=document.getElementById('elems');
+    el.textContent='';el2.textContent='';
+    function hint(box,t){var m=document.createElement('p');m.className='hint';m.textContent=t;box.appendChild(m);}
+    if(!doc){hint(el,'Kein XML geladen.');hint(el2,'Kein XML geladen.');return;}
+    var nodes={},leaves={},paths={},root=doc.documentElement;
+    (function walk(n,path){
+      var kids=Array.prototype.filter.call(n.childNodes,function(c){return c.nodeType===1;});
+      var target=kids.length?nodes:leaves;
+      target[n.nodeName]=(target[n.nodeName]||0)+1;
+      if(n!==root&&kids.length)paths[path]=1;
+      kids.forEach(function(k){walk(k,n===root?k.nodeName:path+'.'+k.nodeName);});
+    })(root,'');
+    var cmp=function(a,b){return a.localeCompare(b);};
+
+    // Tab "Struktur": Pfade
+    var pl=Object.keys(paths).sort(cmp);
+    var h=document.createElement('h3');h.textContent='Pfade von Knoten mit Kindern ('+pl.length+')';el.appendChild(h);
+    if(!pl.length)hint(el,'Keine.');
+    else{var ul=document.createElement('ul');pl.forEach(function(k){var li=document.createElement('li');li.textContent=k;ul.appendChild(li);});el.appendChild(ul);}
+
+    // Tab "XML-Elemente": Nodes und Leafes nebeneinander
+    var cols=document.createElement('div');cols.className='cols';
+    function col(title,map){
+      var d=document.createElement('div'),names=Object.keys(map).sort(cmp),h3=document.createElement('h3');
+      h3.textContent=title+' ('+names.length+')';d.appendChild(h3);
+      if(!names.length)hint(d,'Keine.');
+      else{
+        var tb=document.createElement('table');
+        names.forEach(function(k){var tr=tb.insertRow(),a=tr.insertCell(),b=tr.insertCell();a.textContent=k;b.textContent=map[k];b.className='n';});
+        d.appendChild(tb);
+      }
+      cols.appendChild(d);
+    }
+    col('Nodes',nodes);col('Leafes',leaves);
+    el2.appendChild(cols);
+  }
+  renderStructure();
+
+  function readText(f){if(typeof f.text==='string')return Promise.resolve(f.text);return new Promise(function(res){var r=new FileReader();r.onload=function(){res(r.result);};r.readAsText(f);});}
+  /* ===== JSON -> XML =====
+     Objekt-Schlüssel werden zu Elementen, Arrays zu wiederholten Elementen mit dem Schlüsselnamen,
+     verschachtelte Arrays zu <item>-Kindern. Wurzelelement: <root>. */
+  function xmlName(k){
+    var n=String(k).replace(/[^A-Za-z0-9_.\-\u00B7\u00C0-\uD7FF\uE000-\uFFFD]/g,'_');
+    if(!/^[A-Za-z_\u00C0-\uD7FF\uE000-\uFFFD]/.test(n))n='_'+n;
+    return n;
+  }
+  function jxText(s){return String(s).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\uFFFE\uFFFF]/g,'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+  function jxAttr(s){return jxText(s).replace(/"/g,'&quot;').replace(/\t/g,'&#9;').replace(/\n/g,'&#10;').replace(/\r/g,'&#13;');}
+  function jxEl(key,val,d){
+    var name=xmlName(key),pad=new Array(d+1).join('\t'),attr=name!==String(key)?' name="'+jxAttr(key)+'"':'',kids;
+    if(val===null)return pad+'<'+name+attr+' null="true"/>';
+    if(Array.isArray(val))kids=val.map(function(v){return jxEl('item',v,d+1);});
+    else if(typeof val==='object')kids=Object.keys(val).map(function(k){
+      var v=val[k];
+      return Array.isArray(v)&&v.length?v.map(function(x){return jxEl(k,x,d+1);}).join('\n'):jxEl(k,v,d+1);
+    });
+    else{
+      var t=jxText(val);
+      return t===''?pad+'<'+name+attr+'/>':pad+'<'+name+attr+'>'+t+'</'+name+'>';
+    }
+    if(!kids.length)return pad+'<'+name+attr+'/>';
+    return pad+'<'+name+attr+'>\n'+kids.join('\n')+'\n'+pad+'</'+name+'>';
+  }
+  function jsonToXml(text){
+    var v=JSON.parse(String(text).replace(/^﻿/,''));
+    return '<?xml version="1.0" encoding="utf-8"?>\n'+jxEl('root',v,0)+'\n';
+  }
+  function isJsonFile(f,mode){return mode==='json'||/\.json$/i.test(f.name||'');}
+  function load(files,mode){
+    files=Array.prototype.slice.call(files);
+    Promise.all(files.map(readText)).then(function(raw){
+      var ok=[],i,texts=raw.map(function(t,i){
+        if(!isJsonFile(files[i],mode))return t;
+        try{return jsonToXml(t);}
+        catch(e){add('Fehler beim Parsen von '+files[i].name+' (JSON): '+e.message,'bot err');return null;}
+      });
+      for(i=0;i<files.length;i++){
+        if(texts[i]===null)continue;
+        var p=new DOMParser().parseFromString(texts[i],'application/xml'),e=p.getElementsByTagName('parsererror')[0];
+        if(e)add('Fehler beim Parsen von '+files[i].name+':\n'+e.textContent.trim(),'bot err');
+        else ok.push({name:files[i].name,text:texts[i],doc:p,json:isJsonFile(files[i],mode)});
+      }
+      if(!ok.length){doc=null;view=null;renderStructure();fEl.stat.textContent='';xml.value=texts.filter(function(t){return t!==null;}).join('\n\n');fname.textContent=files.length+(files.length===1?' Datei (ungültig)':' Dateien (ungültig)');return;}
+      var base=ok[0].doc,root=base.documentElement,merged=[ok[0].name],skipped=[];
+      for(i=1;i<ok.length;i++){
+        var r2=ok[i].doc.documentElement;
+        if(r2.localName===root.localName&&r2.namespaceURI===root.namespaceURI){
+          Array.prototype.forEach.call(r2.childNodes,function(n){root.appendChild(base.importNode(n,true));});
+          merged.push(ok[i].name);
+        }else skipped.push(ok[i].name+' (<'+r2.nodeName+'>)');
+      }
+      doc=base;renderStructure();
+      var anyJson=ok.some(function(o){return o.json;});
+      if(merged.length===1){xml.value=ok[0].text;fname.textContent=merged[0];
+        add(merged[0]+' geladen'+(ok[0].json?' (JSON als XML)':'')+' (Wurzelelement: '+root.nodeName+').','bot');}
+      else{xml.value=new XMLSerializer().serializeToString(base);fname.textContent=merged.length+' Dateien verkettet';
+        add(merged.length+' Dateien unter <'+root.nodeName+'> verkettet'+(anyJson?' (JSON als XML)':'')+':\n'+merged.join('\n'),'bot');}
+      if(skipped.length)add('Übersprungen, anderes Wurzelelement als <'+root.nodeName+'>:\n'+skipped.join('\n'),'bot err');
+      xmlFull=xml.value;applyFilter();
+      autoValidate();
+    });
+  }
+  file.onchange=function(){if(file.files.length)load(file.files);file.value='';};
+  filejson.onchange=function(){if(filejson.files.length)load(filejson.files,'json');filejson.value='';};
+
+  var zone=document.querySelector('section[aria-label="XML"]'),depth=0;
+  function hasFiles(e){return e.dataTransfer&&Array.prototype.indexOf.call(e.dataTransfer.types||[],'Files')>-1;}
+  window.addEventListener('dragenter',function(e){if(hasFiles(e)){e.preventDefault();depth++;zone.classList.add('drop');}});
+  window.addEventListener('dragover',function(e){if(hasFiles(e))e.preventDefault();});
+  window.addEventListener('dragleave',function(e){if(hasFiles(e)&&--depth<=0){depth=0;zone.classList.remove('drop');}});
+  window.addEventListener('drop',function(e){
+    if(!hasFiles(e))return;
+    e.preventDefault();depth=0;zone.classList.remove('drop');
+    if(e.dataTransfer.files.length)routeFiles(e.dataTransfer.files);
+  });
+  document.getElementById('clear').onclick=function(){
+    doc=null;view=null;xmlFull='';fEl.stat.textContent='';lastRes=null;renderStructure();renderXsd();xml.value='';fname.textContent='Keine Datei geladen';add('Geladenes XML entfernt.','bot');
+  };
+
+  function fmt(n){
+    if(n.nodeType===1)return new XMLSerializer().serializeToString(n);
+    if(n.nodeType===2)return n.name+'="'+n.value+'"';
+    return n.nodeValue;
+  }
+  function run(expr){
+    var v=view||doc,R=XPathResult,r=v.evaluate(expr,v,v.createNSResolver(v.documentElement),R.ANY_TYPE,null);
+    switch(r.resultType){
+      case R.NUMBER_TYPE:return {text:String(r.numberValue)};
+      case R.STRING_TYPE:return {text:r.stringValue};
+      case R.BOOLEAN_TYPE:return {text:String(r.booleanValue)};
+    }
+    var out=[],elems=[],n;
+    while((n=r.iterateNext())){out.push(fmt(n));if(n.nodeType===1)elems.push(n);}
+    return {
+      text:out.length?out.length+' Treffer:\n'+out.map(function(s,i){return '['+(i+1)+'] '+s;}).join('\n'):'Keine Treffer.',
+      elems:elems,base:v.documentElement
+    };
+  }
+  /* ===== Datumsfilter =====
+     Wirkt nur auf den XML-Tab und auf XPath (Kopie des Dokuments in „view“). Struktur, XML-Elemente
+     und XSD-Prüfung arbeiten auf dem vollen Dokument „doc“. Gefiltert wird auf der obersten Ebene
+     (Kinder des Wurzelelements). Tag oder Zeitraum eines Eintrags: @date, sonst <startdate> (mit <enddate>),
+     sonst früheste und späteste @date seiner Nachkommen. Ein Eintrag bleibt, wenn sein Zeitraum den Bereich überlappt. */
+  var fEl={from:document.getElementById('fromd'),to:document.getElementById('tod'),und:document.getElementById('undated'),nc:document.getElementById('nocomm'),stat:document.getElementById('fstat')},fInfo='',ISO=/^\d{4}-\d{2}-\d{2}$/;
+  function childText(el,name){
+    var k=Array.prototype.filter.call(el.childNodes,function(c){return c.nodeType===1&&c.nodeName===name;})[0];
+    return k?k.textContent.trim():'';
+  }
+  function entryRange(el){
+    var a=(el.getAttribute('date')||'').trim(),s=ISO.test(a)?a:'',en=childText(el,'enddate');
+    if(!s){var sd=childText(el,'startdate');if(ISO.test(sd))s=sd;}
+    if(s)return [s,ISO.test(en)&&en>s?en:s];
+    var all=el.getElementsByTagName('*'),lo='',hi='',i,d;
+    for(i=0;i<all.length;i++){
+      d=(all[i].getAttribute('date')||'').trim();
+      if(!ISO.test(d))continue;
+      if(!lo||d<lo)lo=d;if(!hi||d>hi)hi=d;
+    }
+    return lo?[lo,hi]:null;
+  }
+  function applyFilter(){
+    var from=fEl.from.value,to=fEl.to.value,nc=fEl.nc.checked,bad=false,parts=[];
+    fInfo='';fEl.stat.className='fstat';fEl.stat.textContent='';
+    if(!doc){view=null;return;}
+    view=doc;xml.value=xmlFull;
+    if(from&&to&&from>to){bad=true;from=to='';}
+    if(!from&&!to&&!nc){
+      if(bad){fEl.stat.textContent='„Von“ liegt nach „bis“, der Datumsfilter ist nicht angewendet.';fEl.stat.className='fstat err';}
+      return;
+    }
+    var v=doc.cloneNode(true),root=v.documentElement;
+    if(from||to){
+      var kids=Array.prototype.filter.call(root.childNodes,function(c){return c.nodeType===1;}),keep=0,hidden=0;
+      kids.forEach(function(el){
+        var r=entryRange(el),ok;
+        if(r)ok=(!to||r[0]<=to)&&(!from||r[1]>=from);
+        else{ok=fEl.und.checked;if(!ok)hidden++;}
+        if(ok){keep++;return;}
+        var p=el.previousSibling;
+        if(p&&p.nodeType===3&&!p.nodeValue.trim())root.removeChild(p);
+        root.removeChild(el);
+      });
+      var rng=from&&to?(from===to?from:from+' bis '+to):(from?'ab '+from:'bis '+to);
+      parts.push('Filter aktiv ('+rng+'): '+keep+' von '+kids.length+' Einträgen'+(hidden?', '+hidden+' ohne Datum ausgeblendet':''));
+    }
+    if(nc){
+      var cm=[],tw=v.createTreeWalker(root,128,null),n;   // 128 = Kommentarknoten
+      while((n=tw.nextNode()))cm.push(n);
+      cm.forEach(function(c){
+        var par=c.parentNode,pv=c.previousSibling,nx=c.nextSibling;
+        if(pv&&pv.nodeType===3&&!pv.nodeValue.trim()&&(!nx||(nx.nodeType===3&&!nx.nodeValue.trim())))par.removeChild(pv);
+        par.removeChild(c);
+      });
+      parts.push(cm.length+(cm.length===1?' Kommentar':' Kommentare')+' ausgeblendet');
+    }
+    view=v;
+    xml.value='<?xml version="1.0" encoding="utf-8"?>\n'+new XMLSerializer().serializeToString(root)+'\n';
+    fInfo=parts.join('. ')+'.';
+    fEl.stat.textContent=fInfo+(bad?' „Von“ liegt nach „bis“, der Datumsfilter ist nicht angewendet.':'');
+    if(bad)fEl.stat.className='fstat err';
+  }
+  [fEl.from,fEl.to,fEl.und,fEl.nc].forEach(function(e){e.addEventListener('change',applyFilter);});
+  document.getElementById('fclear').onclick=function(){fEl.from.value='';fEl.to.value='';applyFilter();};
+
+
+  new MutationObserver(function(){fname.title=fname.textContent;}).observe(fname,{childList:true,characterData:true,subtree:true});  // Name voll als Tooltip, falls gekürzt
+  /* ===== Export XML full / structured =====
+     Beide Exporte nehmen immer das volle Dokument (Datumsfilter und Kommentar-Haken wirken nicht).
+     structured: eine Datei pro Jahr. Das Jahr eines Eintrags der obersten Ebene ist das Jahr des Starts
+     (Regeln wie beim Datumsfilter: @date, sonst startdate, sonst früheste date der Unterelemente).
+     Einträge ohne Datum kommen in die Datei ohne-datum_Diary.xml. Kommentare direkt unter der Wurzel
+     gehören zur Datei des Eintrags, der direkt davor steht (steht keiner davor: zum ersten Eintrag). */
+  var XDECL='<?xml version="1.0" encoding="utf-8"?>\n';
+  function xml1(node){return XDECL+new XMLSerializer().serializeToString(node)+'\n';}
+  function fileLine(f){return f.name+' ('+f.count+(f.count===1?' Eintrag':' Einträge')+')';}
+  function buildExport(kind){
+    if(!doc){add('Kein XML geladen. Importiere zuerst eine Datei.','bot err');return null;}
+    var root=doc.documentElement,nodes=Array.prototype.slice.call(root.childNodes),keys=[],counts={},last=null,first=null,i;
+    if(kind==='full'){
+      var n=nodes.filter(function(c){return c.nodeType===1;}).length;
+      return {what:'XML full',files:[{name:'Diary_full.xml',text:xml1(root),count:n}]};
+    }
+    nodes.forEach(function(nd,i){
+      if(nd.nodeType===1){
+        var r=entryRange(nd);last=r?r[0].slice(0,4):'ohne-datum';keys[i]=last;counts[last]=(counts[last]||0)+1;
+        if(first===null)first=last;
+      }else if(nd.nodeType===3&&!nd.nodeValue.trim())keys[i]=null;   // Leerraum bleibt überall
+      else keys[i]=last||undefined;                                    // Kommentar usw.: zum davorstehenden Eintrag
+    });
+    for(i=0;i<keys.length;i++)if(keys[i]===undefined)keys[i]=first;    // Kommentar vor dem ersten Eintrag
+    var groups=Object.keys(counts).sort(function(a,b){return a==='ohne-datum'?1:b==='ohne-datum'?-1:a.localeCompare(b);});
+    return {what:'XML structured',files:groups.map(function(g){
+      var v=doc.cloneNode(true),cr=v.documentElement,cn=Array.prototype.slice.call(cr.childNodes);
+      cn.forEach(function(nd,i){
+        if(keys[i]===null||keys[i]===g)return;
+        var p=nd.previousSibling;
+        if(p&&p.nodeType===3&&!p.nodeValue.trim())cr.removeChild(p);
+        cr.removeChild(nd);
+      });
+      return {name:g+'_Diary.xml',text:xml1(cr),count:counts[g]};
+    })};
+  }
+  async function saveFilesLocal(job){
+    var saved=[],renamed=false,k,f,s;
+    try{
+      for(k=0;k<job.files.length;k++){
+        f=job.files[k];s=await saveLocal(f.name,f.text,'application/xml');
+        if(s===null){add('Export abgebrochen nach '+saved.length+' von '+job.files.length+' Dateien.','bot hint');return;}
+        saved.push(fileLine(f)+(s!==f.name?', gespeichert als '+s:''));if(s!==f.name)renamed=true;
+      }
+    }catch(e){add('Export nicht möglich ('+((e&&e.code)||'Fehler')+'), '+saved.length+' von '+job.files.length+' Dateien gespeichert.','bot err hint');return;}
+    add(job.what+' exportiert, '+saved.length+(saved.length===1?' Datei':' Dateien')+':\n'+saved.join('\n')
+      +(renamed?'\nclaude.ai erlaubt hier keine .xml-Dateien, benenne die Endung bei Bedarf in .xml um.':''),'bot hint');
+  }
+  var dexm=document.getElementById('dexm'),dexmlist=document.getElementById('dexmlist'),dexmok=document.getElementById('dexmok'),dexmJob=null;
+  document.getElementById('dexmcancel').onclick=function(){dexmJob=null;closeDlg(dexm);};
+  async function openMultiExport(job){
+    dexmJob=job;dexmlist.textContent='';dexmok.disabled=true;dexmok.textContent='Speichern';
+    document.getElementById('dexmh').textContent=job.what+' nach GitHub exportieren';
+    setInfo('dexmtarget','Ziel: '+gh.repo+'/'+(ghDir()?ghDir()+'/':''),'');
+    setInfo('dexminfo','Prüfe vorhandene Dateien …','');openDlg(dexm);
+    try{
+      var ex=await Promise.all(job.files.map(function(f){return ghExists(ghPath(f.name));})),over=0;
+      if(dexmJob!==job)return;
+      job.files.forEach(function(f,i){
+        f.sha=ex[i]&&ex[i].sha;if(f.sha)over++;
+        var row=document.createElement('div'),a=document.createElement('span'),b=document.createElement('span');
+        row.className='it';a.textContent=fileLine(f);b.className='sz';b.textContent=f.sha?'wird überschrieben':'neu';
+        row.appendChild(a);row.appendChild(b);dexmlist.appendChild(row);
+      });
+      if(over){var n=job.files.length,what=over===1?(n===1?'Die Datei gibt es schon und wird überschrieben.':'Eine von '+n+' Dateien gibt es schon und wird überschrieben.'):(over===n?'Alle '+n+' Dateien gibt es schon und werden überschrieben.':over+' von '+n+' Dateien gibt es schon und werden überschrieben.');setInfo('dexminfo',what+' Jeder Export ist ein Commit, ältere Stände bleiben in GitHub abrufbar.','err');dexmok.textContent='Überschreiben und speichern';}
+      else setInfo('dexminfo',job.files.length+(job.files.length===1?' neue Datei.':' neue Dateien.'),'');
+      dexmok.disabled=false;
+    }catch(e){setInfo('dexminfo',e.message,'err');}
+  }
+  dexmok.onclick=async function(){
+    var job=dexmJob,k=0,f;if(!job)return;dexmok.disabled=true;
+    try{
+      for(;k<job.files.length;k++){
+        f=job.files[k];setInfo('dexminfo','Speichere '+(k+1)+' von '+job.files.length+' …','');
+        await ghWrite(ghPath(f.name),f.text,f.sha);
+      }
+    }catch(e){
+      setInfo('dexminfo','Fehler bei '+job.files[k].name+': '+e.message+' '+k+' von '+job.files.length+' Dateien sind gespeichert. Schließe den Dialog und starte den Export erneut, bereits gespeicherte Dateien werden dann überschrieben.','err');return;
+    }
+    dexmJob=null;closeDlg(dexm);
+    add(job.what+' nach GitHub exportiert, '+job.files.length+(job.files.length===1?' Datei':' Dateien')+' in '+gh.repo+'/'+(ghDir()?ghDir()+'/':'')+':\n'+job.files.map(fileLine).join('\n'),'bot hint');
+  };
+  function runExport(kind,target){
+    var job=buildExport(kind);if(!job)return;
+    if(!job.files.length){add('Keine Einträge zum Exportieren.','bot err');return;}
+    if(target==='gh')openMultiExport(job);else saveFilesLocal(job);
+  }
+  var xmenu=document.getElementById('xexpmenulist'),xcaret=document.getElementById('xexpmenu');
+  function xmenuOpen(o){
+    xmenu.hidden=!o;xcaret.setAttribute('aria-expanded',o?'true':'false');
+    if(o){menuOpen(false);xmenu.querySelector('button').focus();}
+  }
+  document.getElementById('xexp').onclick=function(){xmenuOpen(false);runExport('full','local');};
+  xcaret.onclick=function(e){e.stopPropagation();xmenuOpen(xmenu.hidden);};
+  [['xefull','full','local'],['xefullgh','full','gh'],['xestr','structured','local'],['xestrgh','structured','gh']].forEach(function(a){
+    document.getElementById(a[0]).onclick=function(){xmenuOpen(false);runExport(a[1],a[2]);};
+  });
+  document.addEventListener('click',function(e){if(!xmenu.hidden&&!document.getElementById('xsplit').contains(e.target))xmenuOpen(false);});
+  document.addEventListener('keydown',function(e){if(e.key==='Escape'&&!xmenu.hidden){xmenuOpen(false);xcaret.focus();}});
+
+
+  /* ===== Tab „Edit“: Elemente ans Ende des XML anhängen =====
+     Geprüft wird vor dem Einfügen: (1) der Text muss wohlgeformtes XML sein (er wird dafür in ein Wurzelelement mit
+     den Namespace-Deklarationen des geladenen XML gepackt), (2) ist ein Schema geladen, dürfen die neuen Elemente
+     dort keine Fehler haben (geprüft wird ein Testlauf auf einer Kopie). Nur wenn alles besteht, wird eingefügt. */
+  var editIn=document.getElementById('editin'),editMsg=document.getElementById('editmsg');
+  function editStatus(t,c){editMsg.textContent=t;editMsg.className='status'+(c?' '+c:'');}
+  function escAttr(v){return String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');}
+  function parseItems(text,root){
+    if(/^<\?xml\b/i.test(text))return {error:'Bitte ohne XML-Deklaration (<?xml …?>) einfügen.'};
+    var ns='',i,a;
+    for(i=0;i<root.attributes.length;i++){a=root.attributes[i];if(a.name==='xmlns'||a.name.indexOf('xmlns:')===0)ns+=' '+a.name+'="'+escAttr(a.value)+'"';}
+    var w=new DOMParser().parseFromString('<'+root.nodeName+ns+'>\n'+text+'\n</'+root.nodeName+'>','application/xml'),pe=w.getElementsByTagName('parsererror')[0];
+    if(pe){
+      var m=(/error on line.*|Fehler.*Zeile.*/i.exec(pe.textContent)||[pe.textContent.trim().split('\n')[0]])[0];
+      m=m.replace(/line (\d+)/gi,function(x,n){return 'line '+Math.max(1,(+n)-1);});   // Zeile ohne den Wrapper zählen
+      return {error:'Das ist kein gültiges XML: '+m.trim()};
+    }
+    var items=[],els=0;
+    for(i=0;i<w.documentElement.childNodes.length;i++){
+      var n=w.documentElement.childNodes[i];
+      if(n.nodeType===1){items.push(n);els++;}
+      else if(n.nodeType===8)items.push(n);
+      else if(n.nodeType===3&&!n.nodeValue.trim())continue;
+      else return {error:n.nodeType===3||n.nodeType===4?'Zwischen den Elementen steht Text. Erlaubt sind nur Elemente und Kommentare.':'Verarbeitungsanweisungen (<?…?>) werden nicht unterstützt.'};
+    }
+    if(!els)return {error:'Es ist kein Element enthalten.'};
+    return {items:items,count:els};
+  }
+  /* hängt die Items ans Ende der Wurzel; Einrückung wie beim ersten Eintrag; gibt die neuen Elemente zurück */
+  function insertItems(target,items){
+    var root=target.documentElement,sep=null,i,c,ref=null,added=[];
+    for(i=0;i<root.childNodes.length;i++){
+      c=root.childNodes[i];
+      if(c.nodeType===3&&!c.nodeValue.trim()&&c.nextSibling&&c.nextSibling.nodeType===1){sep=c.nodeValue;break;}
+    }
+    c=root.lastChild;if(c&&c.nodeType===3&&!c.nodeValue.trim())ref=c;
+    items.forEach(function(n){
+      if(sep!==null)root.insertBefore(target.createTextNode(sep),ref);
+      var cp=target.importNode(n,true);root.insertBefore(cp,ref);
+      if(cp.nodeType===1)added.push(cp);
+    });
+    return added;
+  }
+  document.getElementById('editadd').onclick=function(){
+    var text=editIn.value.trim();
+    if(!doc){editStatus('Kein XML geladen. Importiere zuerst eine Datei.','err');return;}
+    if(!text){editStatus('Das Textfeld ist leer.','err');return;}
+    var root=doc.documentElement,r=parseItems(text,root);
+    if(r.error){editStatus(r.error+' Nichts eingefügt.','err');return;}
+    var how='Auf korrektes XML geprüft (kein Schema geladen).';
+    if(schema){
+      if(!schema.gEl[root.localName]){editStatus('Das geladene Schema '+schemaName+' deklariert das Wurzelelement <'+root.nodeName+'> nicht, die neuen Elemente lassen sich damit nicht prüfen. Nichts eingefügt. Lade das passende Schema oder entferne es im Tab „XSD“.','err');return;}
+      var cand=doc.cloneNode(true),added=insertItems(cand,r.items),res=validateDoc(schema,cand.documentElement,added);
+      if(res.total){
+        var lines=res.errors.slice(0,10).map(function(e){return e.path+': '+e.msg;});
+        editStatus('Das Schema '+schemaName+' lehnt das Element ab ('+res.total+' Fehler'+'). Nichts eingefügt.\n'+lines.join('\n')+(res.total>10?'\n… weitere '+(res.total-10)+'.':''),'err');
+        return;
+      }
+      how='Gegen das Schema '+schemaName+' geprüft.';
+    }
+    var ins=insertItems(doc,r.items),names=ins.map(function(e){return e.nodeName;}),total=Array.prototype.filter.call(root.childNodes,function(c){return c.nodeType===1;}).length;
+    xmlFull=XDECL+new XMLSerializer().serializeToString(doc)+'\n';
+    lastRes=null;renderStructure();renderXsd();applyFilter();autoValidate();
+    editIn.value='';
+    editStatus(ins.length+(ins.length===1?' Element':' Elemente')+' am Ende angehängt ('+names.join(', ')+'). '+how+' Das XML hat jetzt '+total+' Einträge auf oberster Ebene. Die Änderung gilt nur in dieser Sitzung, speichere sie über „Export“.'
+      +(fInfo&&view!==doc?'\nHinweis: '+fInfo+' Das neue Element ist im XML-Tab nur zu sehen, wenn es zum Filter passt.':''),'ok');
+  };
+
+
+  /* ===== Edit-Tab: Clear und „Add template“ =====
+     Das Menü listet die laut Schema erlaubten Elemente direkt unter dem Wurzelelement. Ein Template enthält das
+     Element mit seinen Pflichtattributen und allen laut Schema erlaubten Kindelementen (eine Ebene, die Kinder
+     selbst bleiben unaufgelöst, tragen aber ihre Pflichtattribute). Platzhalter in Attributen und Texten
+     zeigen den Typ (z. B. JJJJ-MM-TT) und müssen vor „Add“ ersetzt werden. Eingefügt wird an der Cursorposition. */
+  var tplBtn=document.getElementById('tplbtn'),tplMenu=document.getElementById('tplmenu');
+  function tplRootName(){
+    if(!schema)return null;
+    var rn=doc&&schema.gEl[doc.documentElement.localName]?doc.documentElement.localName:schema.roots[0];
+    return rn&&schema.gEl[rn]?rn:null;
+  }
+  function tplRootCt(){
+    var rn=tplRootName();if(!rn)return null;
+    var d=schema.decl(schema.gEl[rn]);
+    return d.kind==='complex'&&!d.ct.loose&&!d.ct.simple?d.ct:null;
+  }
+  function tplItems(){var ct=tplRootCt();return ct?Object.keys(ct.kids):[];}
+  /* Elementdeklaration zum Pfad der offenen Elemente im Textfeld (auch lokale Elemente); sonst globale Deklaration gleichen Namens */
+  function tplNodeForPath(stack){
+    var ct=tplRootCt(),node=null,i,d;
+    for(i=0;ct&&i<stack.length;i++){
+      node=ct.kids[stack[i]];if(!node){ct=null;break;}
+      d=schema.decl(node);ct=d.kind==='complex'&&!d.ct.loose&&!d.ct.simple?d.ct:null;
+      if(!ct&&i<stack.length-1){node=null;break;}
+    }
+    return node||schema.gEl[stack[stack.length-1]]||null;
+  }
+  function updateTplButton(){
+    var has=!!schema&&tplItems().length>0,sb=document.getElementById('subbtn'),b=document.getElementById('tplbtn');
+    b.disabled=!has;
+    b.title=has?'':(schema?'Das Schema erlaubt unter der Wurzel keine Elemente.':'Erst im Tab „XSD“ ein Schema laden.');
+    sb.disabled=!schema;sb.title=schema?'':'Erst im Tab „XSD“ ein Schema laden.';
+    if(!has)tplMenuOpen(false);
+    if(!schema)subMenuOpen(false);
+  }
+  function tplAttrs(ct,all){          // all: alle deklarierten Attribute, sonst nur die Pflichtattribute
+    return Object.keys(ct.attrs).filter(function(a){return ct.attrs[a].use!=='prohibited'&&(all||ct.attrs[a].use==='required');})
+      .map(function(a){return ' '+a+'="'+(ct.attrs[a].chk.hint||'…')+'"';}).join('');
+  }
+  function tplLeaf(name,d,all){      // ein Element ohne seine Kinder
+    if(d.kind==='simple')return '<'+name+'>'+(d.chk.hint||'…')+'</'+name+'>';
+    if(d.kind==='complex'){
+      var at=tplAttrs(d.ct,all);
+      return d.ct.simple?'<'+name+at+'>'+(d.ct.simple.hint||'…')+'</'+name+'>':'<'+name+at+'/>';
+    }
+    return '<'+name+'/>';
+  }
+  /* allAttrs: true beim Item-Template (oberstes Element mit allen Attributen), false beim Sub-Item-Template */
+  function buildTemplate(name,node,allAttrs){
+    if(!node)return null;
+    var d=schema.decl(node);
+    if(d.kind!=='complex'||d.ct.simple||d.ct.loose||!Object.keys(d.ct.kids).length)return tplLeaf(name,d,allAttrs);
+    var ct=d.ct;
+    return '<'+name+tplAttrs(ct,allAttrs)+'>\n'+Object.keys(ct.kids).map(function(k){return '\t'+tplLeaf(qLocal(k),schema.decl(ct.kids[k]),false);}).join('\n')+'\n</'+name+'>';
+  }
+  function insertAtCursor(text){
+    var v=editIn.value,a=editIn.selectionStart,b=editIn.selectionEnd;
+    if(typeof a!=='number'){a=b=v.length;}
+    var pre=v.slice(0,a),post=v.slice(b),ins=text;
+    if(pre&&!/\n$/.test(pre))ins='\n'+ins;      // Template steht immer auf eigenen Zeilen
+    if(post&&!/^\n/.test(post))ins+='\n';
+    editIn.focus();editIn.setSelectionRange(a,b);
+    var ok=false;try{ok=document.execCommand('insertText',false,ins);}catch(e){}   // behält Rückgängig bei
+    if(!ok||editIn.value!==pre+ins+post){editIn.value=pre+ins+post;}
+    var pos=pre.length+ins.length;editIn.setSelectionRange(pos,pos);
+  }
+  function tplMenuOpen(o){
+    if(o)subMenuOpen(false);
+    tplMenu.hidden=!o;tplBtn.setAttribute('aria-expanded',o?'true':'false');
+    if(!o)return;
+    var items=tplItems();tplMenu.textContent='';
+    items.forEach(function(n){
+      var b=document.createElement('button');b.type='button';b.setAttribute('role','menuitem');b.textContent=qLocal(n);
+      b.onclick=function(){
+        tplMenuOpen(false);
+        var t=buildTemplate(qLocal(n),tplRootCt().kids[n],true);
+        if(!t){editStatus('Zu <'+qLocal(n)+'> gibt es im Schema keine Deklaration.','err');return;}
+        insertAtCursor(t);
+        editStatus('Template <'+qLocal(n)+'> eingefügt. Ersetze die Platzhalter und lösche, was du nicht brauchst, bevor du „Add“ klickst.','');
+      };
+      tplMenu.appendChild(b);
+    });
+    if(!items.length){tplMenu.hidden=true;return;}
+    tplMenu.querySelector('button').focus();
+  }
+  tplBtn.onclick=function(e){e.stopPropagation();tplMenuOpen(tplMenu.hidden);};
+  document.addEventListener('click',function(e){if(!tplMenu.hidden&&!document.getElementById('tplsplit').contains(e.target))tplMenuOpen(false);});
+  document.addEventListener('keydown',function(e){if(e.key==='Escape'&&!tplMenu.hidden){tplMenuOpen(false);tplBtn.focus();}});
+
+  /* --- Add sub-item template: Kinder des Elements, in dem der Cursor steht --- */
+  var subBtn=document.getElementById('subbtn'),subMenu=document.getElementById('submenu');
+  /* Kontext am Cursor: liest den Text bis zum Cursor und zählt die offenen Tags.
+     state: 'between' (zwischen Elementen, stack = offene Elemente), 'tag', 'text' oder 'broken' */
+  function cursorContext(text,pos,end){          // end: Ende einer Markierung (sie wird ersetzt und zählt nicht als Text)
+    var s=text.slice(0,pos),stack=[],i=0,lt,e,j,q,c,tag,m,nm;
+    while(i<s.length){
+      lt=s.indexOf('<',i);if(lt<0)break;
+      if(s.indexOf('<!--',lt)===lt){e=s.indexOf('-->',lt+4);if(e<0)return {state:'tag'};i=e+3;continue;}
+      if(s.indexOf('<![CDATA[',lt)===lt){e=s.indexOf(']]>',lt);if(e<0)return {state:'tag'};i=e+3;continue;}
+      if(s.indexOf('<?',lt)===lt){e=s.indexOf('?>',lt);if(e<0)return {state:'tag'};i=e+2;continue;}
+      q=null;
+      for(j=lt+1;j<s.length;j++){c=s.charAt(j);if(q){if(c===q)q=null;}else if(c==='"'||c==="'")q=c;else if(c==='>')break;}
+      if(j>=s.length)return {state:'tag'};
+      tag=s.slice(lt+1,j);i=j+1;
+      if(tag.charAt(0)==='!')continue;                                   // <!DOCTYPE …>
+      m=/^\/?\s*([^\s\/>]+)/.exec(tag);if(!m)return {state:'broken'};nm=qLocal(m[1]);
+      if(tag.charAt(0)==='/'){if(stack.length&&stack[stack.length-1]===nm)stack.pop();else return {state:'broken'};}
+      else if(tag.slice(-1)!=='/')stack.push(nm);
+    }
+    var rest=text.slice(end===undefined?pos:end),nx=rest.indexOf('<'),run=s.slice(i)+(nx<0?rest:rest.slice(0,nx));
+    return /\S/.test(run)?{state:'text'}:{state:'between',stack:stack};
+  }
+  function subMenuOpen(o){
+    subMenu.hidden=!o;subBtn.setAttribute('aria-expanded',o?'true':'false');
+    if(!o)return;
+    tplMenuOpen(false);
+    subMenu.textContent='';
+    var a=editIn.selectionStart,b=editIn.selectionEnd;
+    if(typeof a!=='number'){a=b=editIn.value.length;}
+    var cx=cursorContext(editIn.value,a,b),msg=null,names=[],ctxName=null;
+    if(cx.state==='tag')msg='Der Cursor steht in einem Tag, Attribut oder Kommentar. Setze ihn zwischen zwei Elemente.';
+    else if(cx.state==='text')msg='Der Cursor steht in einem Text. Setze ihn zwischen zwei Elemente.';
+    else if(cx.state==='broken')msg='Die Tags vor dem Cursor sind nicht ausgeglichen, der Kontext ist unklar.';
+    else if(!cx.stack.length)msg='Der Cursor steht auf oberster Ebene, zwischen den Items. Dafür gibt es „Add item template“.';
+    else{
+      ctxName=cx.stack[cx.stack.length-1];
+      var node=tplNodeForPath(cx.stack),ctxCt=null;
+      if(!node)msg='Das Schema kennt <'+ctxName+'> nicht als Element.';
+      else{
+        var d=schema.decl(node);
+        ctxCt=d.kind==='complex'&&!d.ct.simple&&!d.ct.loose?d.ct:null;
+        names=ctxCt?Object.keys(ctxCt.kids):[];
+        if(!names.length)msg='In <'+ctxName+'> sind laut Schema keine Unterelemente erlaubt.';
+      }
+    }
+    var head=document.createElement('div');head.className='menuhead';
+    head.textContent=msg||'Unterelemente von <'+ctxName+'>';subMenu.appendChild(head);
+    names.forEach(function(n){
+      var bt=document.createElement('button');bt.type='button';bt.setAttribute('role','menuitem');bt.textContent=qLocal(n);
+      bt.onclick=function(){
+        subMenuOpen(false);
+        var t=buildTemplate(qLocal(n),ctxCt.kids[n],false);
+        if(!t){editStatus('Zu <'+qLocal(n)+'> gibt es im Schema keine Deklaration.','err');return;}
+        insertSub(t,a,b);
+        editStatus('Template <'+qLocal(n)+'> in <'+ctxName+'> eingefügt. Ersetze die Platzhalter und lösche, was du nicht brauchst, bevor du „Add“ klickst.','');
+      };
+      subMenu.appendChild(bt);
+    });
+    var first=subMenu.querySelector('button');if(first)first.focus();
+  }
+  /* fügt ein Sub-Item-Template bei a..b ein, eingerückt passend zur Zeile des Cursors */
+  function insertSub(t,a,b){
+    var v=editIn.value,ls=v.lastIndexOf('\n',a-1)+1,line=v.slice(ls,a),base=/^[ \t]*/.exec(v.slice(ls))[0],
+        lineEnd=v.indexOf('\n',b),post=v.slice(b,lineEnd<0?v.length:lineEnd),lines=t.split('\n'),ins;
+    if(!/\S/.test(line))ins=lines.join('\n'+line);                       // Cursor steht in der Einrückung: dort weiter einrücken
+    else{
+      var ind=/(<\/[^>]*>|\/>)\s*$/.test(line)?base:base+'\t';            // hinter Ende-Tag: gleiche Ebene, hinter Start-Tag: eine Ebene tiefer
+      ins='\n'+lines.map(function(l){return ind+l;}).join('\n');
+    }
+    if(/\S/.test(post))ins+='\n'+base;                                    // Rest der Zeile in eine neue Zeile
+    editIn.focus();editIn.setSelectionRange(a,b);
+    var ok=false;try{ok=document.execCommand('insertText',false,ins);}catch(e){}
+    if(!ok||editIn.value!==v.slice(0,a)+ins+v.slice(b))editIn.value=v.slice(0,a)+ins+v.slice(b);
+    var pos=a+ins.length;editIn.setSelectionRange(pos,pos);
+  }
+  subBtn.onclick=function(e){e.stopPropagation();subMenuOpen(subMenu.hidden);};
+  document.addEventListener('click',function(e){if(!subMenu.hidden&&!document.getElementById('subsplit').contains(e.target))subMenuOpen(false);});
+  document.addEventListener('keydown',function(e){if(e.key==='Escape'&&!subMenu.hidden){subMenuOpen(false);subBtn.focus();}});
+
+  document.getElementById('editclear').onclick=function(){editIn.value='';editStatus('','');editIn.focus();};
+
+  document.getElementById('f').onsubmit=function(ev){
+    ev.preventDefault();
+    var expr=q.value.trim(); if(!expr)return;
+    pushHist(expr);hi=history.length;draft='';tabMatches=null;q.value='';
+    add(expr,'me');
+    if(!doc){add('Noch keine gültige XML-Datei geladen. Bitte zuerst importieren.','bot err');return;}
+    try{var res=run(expr);add(res.text,'bot',res);if(view!==doc&&fInfo)add(fInfo,'bot hint');}catch(e){add('Ungültiger XPath-Ausdruck: '+e.message,'bot err');}
+  };
+
+  /* ===== Ergebnis als XML exportieren ===== */
+  function xmlEsc(s,attr){
+    s=String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    return attr?s.replace(/"/g,'&quot;').replace(/\t/g,'&#9;').replace(/\n/g,'&#10;').replace(/\r/g,'&#13;'):s;
+  }
+  function xmlAttrs(el){
+    var o='',i;for(i=0;i<el.attributes.length;i++)o+=' '+el.attributes[i].name+'="'+xmlEsc(el.attributes[i].value,true)+'"';
+    return o;
+  }
+  function ser(n,depth,pretty){
+    var pad=pretty?new Array(depth+1).join('\t'):'';
+    if(n.nodeType===3||n.nodeType===4)return xmlEsc(n.nodeValue);
+    if(n.nodeType===8)return pad+'<!--'+n.nodeValue+'-->';
+    if(n.nodeType===7)return pad+'<?'+n.target+' '+n.data+'?>';
+    if(n.nodeType!==1)return '';
+    var tag=n.nodeName,open='<'+tag+xmlAttrs(n)+'>',kids=Array.prototype.slice.call(n.childNodes);
+    if(!kids.length)return pad+'<'+tag+xmlAttrs(n)+'/>';
+    var onlyText=kids.every(function(k){return k.nodeType===3||k.nodeType===4;});
+    var hasText=kids.some(function(k){return (k.nodeType===3||k.nodeType===4)&&k.nodeValue.trim();});
+    if(onlyText||!pretty||hasText)  // Text oder gemischter Inhalt: unverändert übernehmen
+      return pad+open+kids.map(function(k){return ser(k,0,false);}).join('')+'</'+tag+'>';
+    return pad+open+'\n'+kids.filter(function(k){return k.nodeType!==3;}).map(function(k){return ser(k,depth+1,true);}).join('\n')+'\n'+pad+'</'+tag+'>';
+  }
+  function resultItems(extra){
+    // Treffer, die schon Teil eines übergeordneten Treffers sind, nicht noch einmal ausgeben
+    var base=extra.base,set=new Set(extra.elems),items=[],nested=0;
+    extra.elems.forEach(function(n){
+      var p=n.parentNode,inside=false;
+      while(p){if(set.has(p)){inside=true;break;}p=p.parentNode;}
+      if(inside){nested++;return;}
+      if(n===base){Array.prototype.forEach.call(base.childNodes,function(k){if(k.nodeType===1)items.push(k);});}  // Wurzel selbst: ihre Kinder
+      else items.push(n);
+    });
+    return {items:items,nested:nested};
+  }
+  function buildResultXml(extra){
+    var base=extra.base,body=resultItems(extra).items.map(function(n){return ser(n,1,true);}).join('\n');
+    return '<?xml version="1.0" encoding="utf-8"?>\n<'+base.nodeName+xmlAttrs(base)+'>'+(body?'\n'+body+'\n':'')+'</'+base.nodeName+'>\n';
+  }
+  function nowStamp(){var d=new Date();return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'-'+pad(d.getHours())+pad(d.getMinutes());}
+  async function saveLocal(name,text,mime){
+    var dl=null;
+    try{dl=await window.claude.use('downloads');}catch(e){dl=null;}
+    if(dl){
+      try{await dl.save({filename:name,data:text});return name;}
+      catch(e){
+        if(e&&e.code==='declined')return null;
+        if(e&&e.code==='rejected_extension'&&/\.xml$/i.test(name)){  // claude.ai erlaubt keine .xml-Dateien
+          try{await dl.save({filename:name+'.txt',data:text});return name+'.txt';}
+          catch(e2){if(e2&&e2.code==='declined')return null;throw e2;}
+        }
+        throw e;
+      }
+    }
+    var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type:mime}));
+    a.download=name;document.body.appendChild(a);a.click();a.remove();return name;
+  }
+  async function exportResultLocal(extra){
+    var name='diary-result-'+nowStamp()+'.xml';
+    try{
+      var saved=await saveLocal(name,buildResultXml(extra),'application/xml');
+      var nested=resultItems(extra).nested;
+      if(saved)add('Ergebnis ('+extra.elems.length+' Element'+(extra.elems.length===1?'':'e')+') als '+saved+' exportiert'
+        +(nested?', '+nested+' davon als Teil übergeordneter Treffer':'')
+        +(saved!==name?'. claude.ai erlaubt hier keine .xml-Dateien, benenne die Endung bei Bedarf in .xml um':'')+'.','bot hint');
+    }catch(e){add('Export nicht möglich ('+((e&&e.code)||'Fehler')+').','bot err hint');}
+  }
+  function addExportButtons(acts,extra){
+    var b1=document.createElement('button');b1.type='button';b1.textContent='Als XML exportieren ('+extra.elems.length+')';
+    b1.title='Ergebnis als XML speichern, unter dem Wurzelelement <'+extra.base.nodeName+'>';
+    b1.onclick=function(){exportResultLocal(extra);};
+    var b2=document.createElement('button');b2.type='button';b2.className='gh-only';b2.textContent='XML nach GitHub';
+    var ok=typeof gh!=='undefined'&&gh.ok;b2.disabled=!ok;b2.title=ok?'':'Erst über das Zahnrad verbinden.';
+    b2.onclick=function(){openExportDialog({ext:'.xml',prefix:'diary-result-',what:'Ergebnis',make:function(){return buildResultXml(extra);}});};
+    acts.appendChild(b1);acts.appendChild(b2);
+  }
+  function caretEnd(){var n=q.value.length;q.setSelectionRange(n,n);}
+  q.addEventListener('input',function(){tabMatches=null;hi=history.length;draft=q.value;});
+  q.addEventListener('keydown',function(e){
+    if(e.key==='ArrowUp'){
+      if(hi>0){if(hi===history.length)draft=q.value;hi--;q.value=history[hi];tabMatches=null;}
+      e.preventDefault();setTimeout(caretEnd,0);
+    }else if(e.key==='ArrowDown'){
+      if(hi<history.length){hi++;q.value=hi===history.length?draft:history[hi];tabMatches=null;}
+      e.preventDefault();setTimeout(caretEnd,0);
+    }else if(e.key==='Tab'&&!e.shiftKey&&!e.ctrlKey&&!e.altKey&&!e.metaKey){
+      if(!tabMatches){
+        tabBase=q.value;
+        tabMatches=history.slice().reverse().filter(function(h){return h.indexOf(tabBase)===0&&h!==tabBase;});
+        tabIdx=0;
+      }else tabIdx=(tabIdx+1)%tabMatches.length;
+      if(!tabMatches.length){tabMatches=null;return;}
+      e.preventDefault();
+      q.value=tabMatches[tabIdx];caretEnd();
+    }
+  });
+
+  document.getElementById('clr').onclick=function(){
+    log.innerHTML='';msgs=[];hint();
+  };
+  function fence(t,lang){var f='```';while(t.indexOf(f)>-1)f+='`';return f+(lang||'')+'\n'+t+'\n'+f;}
+  function pad(n){return (n<10?'0':'')+n;}
+  function buildMd(){
+    var d=new Date(),md='# Diary-Chat\n\nExportiert: '+d.toLocaleString('de-DE')+'  \nGeladene Datei: '+fname.textContent+'\n';
+    msgs.forEach(function(m){
+      if(m.cls==='me')md+='\n## Eingabe\n\n'+fence(m.text,'xpath')+'\n';
+      else md+='\n'+(m.cls.indexOf('err')>-1?'**Fehler:**':'**Antwort:**')+'\n\n'+fence(m.text,'text')+'\n';
+    });
+    return md;
+  }
+  document.getElementById('exp').onclick=async function(){
+    if(!msgs.length){add('Der Chat ist leer, es gibt nichts zu exportieren.','bot hint');return;}
+    var d=new Date(),name='diary-chat-'+d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'-'+pad(d.getHours())+pad(d.getMinutes())+'.md',
+        md=buildMd(),dl=null;
+    try{dl=await window.claude.use('downloads');}catch(e){dl=null;}
+    if(dl){
+      try{await dl.save({filename:name,data:md});add('Chat als '+name+' exportiert.','bot hint');}
+      catch(e){if(!e||e.code!=='declined')add('Export nicht möglich ('+((e&&e.code)||'Fehler')+').','bot err hint');}
+      return;
+    }
+    try{ // Fallback außerhalb von claude.ai
+      var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([md],{type:'text/markdown'}));
+      a.download=name;document.body.appendChild(a);a.click();a.remove();
+    }catch(e){add('Export hier nicht verfügbar.','bot err hint');}
+  };
+
+  /* ===== GitHub-Speicher ===== */
+  /*GH-API-START*/
+  var gh={repo:'',folder:'diary',branch:'',token:'',keep:false,ok:false};
+  function ghErr(code,msg){var e=new Error(msg);e.code=code;return e;}
+  function ghDir(){return String(gh.folder||'').replace(/^\/+|\/+$/g,'');}
+  function ghPath(name){var d=ghDir();return d?d+'/'+name:name;}
+  function ghUrl(path){
+    var u='https://api.github.com/repos/'+gh.repo+'/contents'+(path?'/'+path.split('/').map(encodeURIComponent).join('/'):'');
+    return gh.branch?u+'?ref='+encodeURIComponent(gh.branch):u;
+  }
+  async function ghFetch(url,opts){
+    opts=opts||{};
+    var h={'Accept':opts.accept||'application/vnd.github+json'};
+    if(gh.token)h.Authorization='Bearer '+gh.token;
+    if(opts.body)h['Content-Type']='application/json';
+    var r;
+    try{r=await fetch(url,{method:opts.method||'GET',headers:h,body:opts.body,cache:'no-store'});}
+    catch(e){throw ghErr('network','GitHub nicht erreichbar (Netzwerk, oder diese Umgebung blockiert Verbindungen zu api.github.com).');}
+    if(r.ok)return r;
+    var m='';try{m=(await r.json()).message||'';}catch(e){}
+    if(r.status===401)throw ghErr(401,'Token ungültig oder abgelaufen.');
+    if(r.status===403)throw ghErr(403,'Zugriff verweigert oder Limit erreicht'+(m?' ('+m+')':'')+'.');
+    if(r.status===404)throw ghErr(404,'Nicht gefunden. Prüfe Repository, Ordner und Branch und ob das Token Zugriff auf dieses Repository hat.');
+    if(r.status===409||r.status===422)throw ghErr(r.status,'Konflikt beim Schreiben'+(m?' ('+m+')':'')+'. Bitte erneut versuchen.');
+    throw ghErr(r.status,'GitHub-Fehler '+r.status+(m?': '+m:'')+'.');
+  }
+  function b64(text){
+    var b=new TextEncoder().encode(text),s='',i;
+    for(i=0;i<b.length;i+=0x8000)s+=String.fromCharCode.apply(null,b.subarray(i,i+0x8000));
+    return btoa(s);
+  }
+  async function ghList(){
+    try{
+      var j=await (await ghFetch(ghUrl(ghDir()))).json();
+      return Array.isArray(j)?j.filter(function(x){return x.type==='file';}):[];
+    }catch(e){if(e.code===404)return [];throw e;}
+  }
+  async function ghRead(path){return (await ghFetch(ghUrl(path),{accept:'application/vnd.github.raw+json'})).text();}
+  async function ghExists(path){
+    try{
+      var j=await (await ghFetch(ghUrl(path))).json();
+      if(Array.isArray(j))throw ghErr('dir','Der Name gehört zu einem Ordner im Repository.');
+      return j;
+    }catch(e){if(e.code===404)return null;throw e;}
+  }
+  async function ghWrite(path,text,sha){
+    var body={message:'Diary-Chat: '+path.split('/').pop(),content:b64(text)};
+    if(gh.branch)body.branch=gh.branch;
+    if(sha)body.sha=sha;
+    await ghFetch(ghUrl(path).split('?')[0],{method:'PUT',body:JSON.stringify(body)});
+  }
+  /*GH-API-END*/
+
+  var ghEl={repo:document.getElementById('ghrepo'),folder:document.getElementById('ghfolder'),branch:document.getElementById('ghbranch'),
+    token:document.getElementById('ghtoken'),keep:document.getElementById('ghkeep'),status:document.getElementById('ghstatus')};
+  function ghStatus(t,c){ghEl.status.textContent=t;ghEl.status.className='status'+(c?' '+c:'');}
+  function ghUpdateButtons(){
+    ['impgh','expgh','xsdgh'].forEach(function(id){
+      var b=document.getElementById(id);b.disabled=!gh.ok;
+      b.title=gh.ok?'':'Erst über das Zahnrad verbinden.';
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('.gh-only'),function(b){
+      b.disabled=!gh.ok;b.title=gh.ok?'':'Erst über das Zahnrad verbinden.';
+    });
+  }
+  function ghLoadCfg(){
+    try{var c=JSON.parse(localStorage.getItem('xpathghchat.cfg')||'{}');
+      gh.repo=c.repo||'';gh.folder=c.folder==null?'diary':c.folder;gh.branch=c.branch||'';gh.keep=!!c.keep;}catch(e){}
+    try{gh.token=(gh.keep?localStorage.getItem('xpathghchat.token'):sessionStorage.getItem('xpathghchat.token'))||'';}catch(e){}
+  }
+  function ghSaveCfg(){
+    try{localStorage.setItem('xpathghchat.cfg',JSON.stringify({repo:gh.repo,folder:gh.folder,branch:gh.branch,keep:gh.keep}));}catch(e){}
+    try{
+      localStorage.removeItem('xpathghchat.token');sessionStorage.removeItem('xpathghchat.token');
+      if(gh.token)(gh.keep?localStorage:sessionStorage).setItem('xpathghchat.token',gh.token);
+    }catch(e){}
+  }
+  function ghFill(){
+    ghEl.repo.value=gh.repo;ghEl.folder.value=gh.folder;ghEl.branch.value=gh.branch;ghEl.keep.checked=gh.keep;ghEl.token.value='';
+    ghEl.token.placeholder=gh.token?'gespeichert (leer lassen, um es zu behalten)':'github_pat_…';
+  }
+  async function ghConnect(){
+    gh.ok=false;ghUpdateButtons();
+    if(!/^[\w.-]+\/[\w.-]+$/.test(gh.repo)){ghStatus('Repository im Format Besitzer/Name angeben.','err');return;}
+    if(!gh.token){ghStatus('Token fehlt.','err');return;}
+    ghStatus('Prüfe Verbindung …','');
+    try{
+      var j=await (await ghFetch('https://api.github.com/repos/'+gh.repo)).json();
+      gh.ok=true;ghUpdateButtons();
+      if(j.permissions&&j.permissions.push===false)ghStatus('Verbunden mit '+j.full_name+', aber das Token hat nur Leserechte. Exportieren wird fehlschlagen.','err');
+      else if(!j.private)ghStatus('Verbunden mit '+j.full_name+'. ACHTUNG: Das Repository ist öffentlich, gespeicherte Dateien wären für alle lesbar.','err');
+      else ghStatus('Verbunden mit '+j.full_name+' (privat).','ok');
+    }catch(e){ghStatus(e.message,'err');}
+  }
+  document.getElementById('ghsave').onclick=function(){
+    gh.repo=ghEl.repo.value.trim();gh.folder=ghEl.folder.value.trim();gh.branch=ghEl.branch.value.trim();gh.keep=ghEl.keep.checked;
+    if(ghEl.token.value.trim())gh.token=ghEl.token.value.trim();
+    ghSaveCfg();ghFill();ghConnect();
+  };
+  document.getElementById('ghforget').onclick=function(){
+    gh.token='';gh.ok=false;ghSaveCfg();ghFill();ghUpdateButtons();ghStatus('Token entfernt.','');
+  };
+  function openDlg(d){if(d.showModal)d.showModal();else d.setAttribute('open','');}
+  function closeDlg(d){if(d.close)d.close();else d.removeAttribute('open');}
+  function setInfo(id,t,c){var e=document.getElementById(id);e.textContent=t;e.className='status'+(c?' '+c:'');}
+
+  /* Import aus GitHub */
+  var dimp=document.getElementById('dimp'),dimplist=document.getElementById('dimplist'),dimpok=document.getElementById('dimpok');
+  function dimpChecked(){return Array.prototype.slice.call(dimplist.querySelectorAll('input:checked'));}
+  dimplist.addEventListener('change',function(){dimpok.disabled=!dimpChecked().length;});
+  document.getElementById('impgh').onclick=async function(){
+    dimplist.textContent='';dimpok.disabled=true;setInfo('dimpinfo','Lade Liste …','');openDlg(dimp);
+    try{
+      var files=(await ghList()).filter(function(f){return /\.(xml|json)$/i.test(f.name);}).sort(function(a,b){return a.name.localeCompare(b.name);});
+      if(!files.length){setInfo('dimpinfo','Keine .xml- oder .json-Dateien in '+gh.repo+'/'+ghDir()+' gefunden.','');return;}
+      setInfo('dimpinfo',files.length+' Datei(en) in '+gh.repo+'/'+ghDir(),'');
+      files.forEach(function(f){
+        var l=document.createElement('label'),c=document.createElement('input'),n=document.createElement('span'),z=document.createElement('span');
+        c.type='checkbox';c.value=f.name;n.textContent=f.name;z.className='sz';z.textContent=Math.max(1,Math.round(f.size/1024))+' KB';
+        l.appendChild(c);l.appendChild(n);l.appendChild(z);dimplist.appendChild(l);
+      });
+    }catch(e){setInfo('dimpinfo',e.message,'err');}
+  };
+  document.getElementById('dimpall').onclick=function(){
+    var all=dimplist.querySelectorAll('input'),on=dimpChecked().length!==all.length;
+    Array.prototype.forEach.call(all,function(c){c.checked=on;});dimpok.disabled=!dimpChecked().length;
+  };
+  document.getElementById('dimpcancel').onclick=function(){closeDlg(dimp);};
+  dimpok.onclick=async function(){
+    var names=dimpChecked().map(function(c){return c.value;});if(!names.length)return;
+    dimpok.disabled=true;setInfo('dimpinfo','Lade '+names.length+' Datei(en) …','');
+    try{
+      var src=[];
+      for(var i=0;i<names.length;i++)src.push({name:names[i],text:await ghRead(ghPath(names[i]))});
+      closeDlg(dimp);load(src);
+    }catch(e){setInfo('dimpinfo',e.message,'err');dimpok.disabled=false;}
+  };
+
+  /* Export nach GitHub */
+  var dexp=document.getElementById('dexp'),dexpname=document.getElementById('dexpname'),dexpok=document.getElementById('dexpok'),expConfirm=false;
+  function expReset(){expConfirm=false;dexpok.textContent='Speichern';setInfo('dexpinfo','','');}
+  dexpname.addEventListener('input',expReset);
+  var expJob=null;
+  function openExportDialog(job){
+    expJob=job;
+    dexp.querySelector('h3').textContent=job.what+' nach GitHub exportieren';
+    dexpname.value=job.prefix+nowStamp()+job.ext;
+    setInfo('dexptarget','Ziel: '+gh.repo+'/'+(ghDir()?ghDir()+'/':''),'');expReset();dexpok.disabled=false;openDlg(dexp);
+  }
+  document.getElementById('expgh').onclick=function(){
+    if(!msgs.length){add('Der Chat ist leer, es gibt nichts zu exportieren.','bot hint');return;}
+    openExportDialog({ext:'.md',prefix:'diary-chat-',what:'Chat',make:buildMd});
+  };
+  document.getElementById('dexpcancel').onclick=function(){closeDlg(dexp);};
+  dexpok.onclick=async function(){
+    var job=expJob;if(!job)return;
+    var name=dexpname.value.trim();
+    if(!name||/[\/\\]/.test(name)){setInfo('dexpinfo','Bitte einen Dateinamen ohne Schrägstriche angeben.','err');return;}
+    if(name.slice(-job.ext.length).toLowerCase()!==job.ext){name+=job.ext;dexpname.value=name;}
+    dexpok.disabled=true;
+    try{
+      var path=ghPath(name),ex=await ghExists(path);
+      if(ex&&!expConfirm){expConfirm=true;dexpok.textContent='Überschreiben';setInfo('dexpinfo','Die Datei existiert bereits. Überschreiben legt einen neuen Commit an.','err');dexpok.disabled=false;return;}
+      await ghWrite(path,job.make(),ex&&ex.sha);
+      closeDlg(dexp);add(job.what+' nach GitHub exportiert: '+gh.repo+'/'+path,'bot hint');
+    }catch(e){setInfo('dexpinfo',e.message,'err');}
+    dexpok.disabled=false;
+  };
+
+  var dgh=document.getElementById('dgh');
+  document.getElementById('ghset').onclick=function(){openDlg(dgh);};
+  document.getElementById('ghclose').onclick=function(){closeDlg(dgh);};
+  ghLoadCfg();ghFill();ghUpdateButtons();
+  if(gh.repo&&gh.token)ghConnect();
+
+  /* ===== Diary-spezifische Funktionen =====
+     Hier kommen später die Funktionen dazu, die nur der Diary-Chat braucht.
+     Verfügbar sind: doc (geladenes XML-Dokument), add(text,cls,extra) für Chat-Nachrichten,
+     load(files,mode) zum Importieren, renderStructure(), gh und die ghRead/ghWrite-Funktionen. */
+
+  /* --- Mini-XSD-Validator ---
+     Geprüft werden: erlaubte Kindelemente (Menge, ohne Reihenfolge und Anzahl), Text in Elementen,
+     Attribute (erlaubt, Pflicht), Wertetypen (string, anyURI, integer-Familie, decimal, double, boolean,
+     date, dateTime, time) und pattern. Alles andere wird im Tab „XSD“ als nicht geprüft aufgeführt. */
+  var XS='http://www.w3.org/2001/XMLSchema',XSI='http://www.w3.org/2001/XMLSchema-instance';
+  var ANYCHK={check:function(){return null;}};
+  var BUILTIN={
+    integer:[/^[+-]?\d+$/,'ganze Zahl'],int:[/^[+-]?\d+$/,'ganze Zahl'],long:[/^[+-]?\d+$/,'ganze Zahl'],
+    short:[/^[+-]?\d+$/,'ganze Zahl'],byte:[/^[+-]?\d+$/,'ganze Zahl'],
+    nonNegativeInteger:[/^\+?\d+$/,'nicht-negative ganze Zahl'],unsignedInt:[/^\+?\d+$/,'nicht-negative ganze Zahl'],
+    unsignedLong:[/^\+?\d+$/,'nicht-negative ganze Zahl'],unsignedShort:[/^\+?\d+$/,'nicht-negative ganze Zahl'],
+    unsignedByte:[/^\+?\d+$/,'nicht-negative ganze Zahl'],
+    positiveInteger:[/^\+?0*[1-9]\d*$/,'positive ganze Zahl'],
+    nonPositiveInteger:[/^(-\d+|\+?0+)$/,'nicht-positive ganze Zahl'],negativeInteger:[/^-0*[1-9]\d*$/,'negative ganze Zahl'],
+    decimal:[/^[+-]?(\d+(\.\d*)?|\.\d+)$/,'Dezimalzahl'],
+    double:[/^([+-]?(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?|[+-]?INF|NaN)$/,'Gleitkommazahl'],
+    float:[/^([+-]?(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?|[+-]?INF|NaN)$/,'Gleitkommazahl'],
+    boolean:[/^(true|false|1|0)$/,'Wahrheitswert true/false'],
+    dateTime:[/^-?\d{4,}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})?$/,'Datum mit Uhrzeit'],
+    time:[/^\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})?$/,'Uhrzeit']
+  };
+  /* Platzhalter für Templates im Tab „Edit“ */
+  var HINT={date:'JJJJ-MM-TT',dateTime:'JJJJ-MM-TTThh:mm:ss',time:'hh:mm:ss',boolean:'true',decimal:'0.0',double:'0.0',float:'0.0',positiveInteger:'1',negativeInteger:'-1'};
+  var TEXTLIKE={string:1,normalizedString:1,token:1,anyURI:1,language:1,Name:1,NCName:1,NMTOKEN:1,ID:1,IDREF:1,anySimpleType:1,anyType:1};
+  function xsKids(n,name){return Array.prototype.filter.call(n.childNodes,function(c){return c.nodeType===1&&c.namespaceURI===XS&&(!name||c.localName===name);});}
+  function qLocal(q){return String(q||'').replace(/^[^:]*:/,'');}
+  function shortVal(v){v=String(v);return v.length>40?v.slice(0,37)+'…':v;}
+  function isDate(v){
+    var m=/^(-?\d{4,})-(\d{2})-(\d{2})(Z|[+-]\d{2}:\d{2})?$/.exec(v);if(!m)return false;
+    var y=+m[1],mo=+m[2],d=+m[3],t=new Date(Date.UTC(2000,mo-1,d));t.setUTCFullYear(y);
+    return mo>=1&&mo<=12&&t.getUTCMonth()===mo-1&&t.getUTCDate()===d;
+  }
+
+  function parseXsd(text){
+    var dx=new DOMParser().parseFromString(text,'application/xml'),pe=dx.getElementsByTagName('parsererror')[0];
+    if(pe)return {error:'Die Datei ist kein gültiges XML: '+pe.textContent.trim().split('\n')[0]};
+    var sc=dx.documentElement;
+    if(sc.namespaceURI!==XS||sc.localName!=='schema')return {error:'Das ist kein XSD (das Wurzelelement ist nicht xs:schema).'};
+    var S={notes:{},gEl:{},gType:{},gAttr:{},gAG:{},gGrp:{},roots:[],nEl:0};
+    var memoS=new Map(),memoD=new Map(),memoC=new Map();
+    function note(k){S.notes[k]=(S.notes[k]||0)+1;}
+    function builtinCheck(n){
+      if(n==='date')return {hint:HINT.date,check:function(v){v=v.trim();return isDate(v)?null:'Wert "'+shortVal(v)+'" ist kein gültiges Datum (JJJJ-MM-TT)';}};
+      var b=BUILTIN[n];
+      if(b)return {hint:HINT[n]||(/ganze Zahl/.test(b[1])?'0':undefined),check:function(v){v=v.trim();return b[0].test(v)?null:'Wert "'+shortVal(v)+'" passt nicht zu xs:'+n+' ('+b[1]+')';}};
+      if(!TEXTLIKE[n])note('Typ xs:'+n+' (wie Text behandelt)');
+      return ANYCHK;
+    }
+    if(sc.getAttribute('targetNamespace'))note('targetNamespace (Namespaces werden ignoriert)');
+    xsKids(sc).forEach(function(c){
+      var ln=c.localName,n=c.getAttribute('name');
+      if(ln==='element'&&n)S.gEl[n]=c;
+      else if((ln==='simpleType'||ln==='complexType')&&n)S.gType[n]=c;
+      else if(ln==='attribute'&&n)S.gAttr[n]=c;
+      else if(ln==='attributeGroup'&&n)S.gAG[n]=c;
+      else if(ln==='group'&&n)S.gGrp[n]=c;
+      else if(ln!=='annotation')note(ln);
+    });
+    function refKind(q,node){
+      var i=q.indexOf(':'),ns=node.lookupNamespaceURI(i>0?q.slice(0,i):null),l=qLocal(q);
+      return ns===XS?{b:l}:{u:l};
+    }
+    function simpleByRef(q,node){
+      var r=refKind(q||'',node);
+      if(r.b)return builtinCheck(r.b);
+      var t=S.gType[r.u];
+      if(!t){note('unbekannter Typ '+r.u);return ANYCHK;}
+      if(t.localName!=='simpleType'){note('Typ '+r.u+' (komplexer Typ als Wert)');return ANYCHK;}
+      return simpleByNode(t);
+    }
+    function simpleByNode(node){
+      if(memoS.has(node))return memoS.get(node);
+      memoS.set(node,ANYCHK);
+      var res=buildSimple(node);memoS.set(node,res);return res;
+    }
+    function buildSimple(node){
+      if(xsKids(node,'union').length){note('union');return ANYCHK;}
+      if(xsKids(node,'list').length){note('list');return ANYCHK;}
+      var r=xsKids(node,'restriction')[0];if(!r)return ANYCHK;
+      var inner=xsKids(r,'simpleType')[0],
+          base=r.getAttribute('base')?simpleByRef(r.getAttribute('base'),r):(inner?simpleByNode(inner):ANYCHK),
+          pats=[],rx=[];
+      xsKids(r).forEach(function(f){
+        var ln=f.localName;
+        if(ln==='pattern')pats.push(f.getAttribute('value'));
+        else if(ln!=='annotation'&&ln!=='simpleType')note(ln+' (Einschränkung nicht geprüft)');
+      });
+      pats.forEach(function(p){try{rx.push(new RegExp('^(?:'+p+')$'));}catch(e){note('Muster nicht auswertbar: '+p);}});
+      if(!rx.length)return base;
+      return {hint:base.hint,check:function(v){
+        var m=base.check(v);if(m)return m;
+        for(var i=0;i<rx.length;i++)if(rx[i].test(v))return null;
+        return 'Wert "'+shortVal(v)+'" passt nicht zum Muster '+pats.join(' | ');
+      }};
+    }
+    function attrCheck(a){
+      if(a.getAttribute('type'))return simpleByRef(a.getAttribute('type'),a);
+      var st=xsKids(a,'simpleType')[0];return st?simpleByNode(st):ANYCHK;
+    }
+    function complexByNode(node){
+      if(memoC.has(node))return memoC.get(node);
+      var ct={attrs:{},kids:{},mixed:node.getAttribute('mixed')==='true',simple:null,loose:false,anyAttr:false,anyKids:false};
+      memoC.set(node,ct);
+      fillCt(ct,node,{});
+      return ct;
+    }
+    function addAttr(ct,a){
+      var nm=a.getAttribute('name'),src=a,ref=a.getAttribute('ref');
+      if(!nm&&ref){
+        var g=S.gAttr[qLocal(ref)];
+        if(!g){note('attribute ref '+ref);ct.anyAttr=true;return;}
+        nm=g.getAttribute('name');src=g;
+      }
+      if(!nm){note('attribute ohne Namen');ct.anyAttr=true;return;}
+      ct.attrs[nm]={use:a.getAttribute('use')||'optional',chk:attrCheck(src)};
+    }
+    function attrGroup(ct,g,seen){
+      var nm=qLocal(g.getAttribute('ref')),d=S.gAG[nm];
+      if(!d){note('unbekannte attributeGroup '+nm);ct.anyAttr=true;return;}
+      if(seen['a:'+nm])return;seen['a:'+nm]=1;
+      xsKids(d).forEach(function(c){
+        var cn=c.localName;
+        if(cn==='attribute')addAttr(ct,c);
+        else if(cn==='attributeGroup')attrGroup(ct,c,seen);
+        else if(cn==='anyAttribute'){note('anyAttribute');ct.anyAttr=true;}
+        else if(cn!=='annotation')note(cn);
+      });
+    }
+    function groupModel(ct,g,seen){
+      var mn=g.getAttribute('minOccurs'),mx=g.getAttribute('maxOccurs');
+      if(g.localName!=='choice'||!(mn==='0'&&mx==='unbounded'))note('Reihenfolge und Anzahl der Kindelemente');
+      xsKids(g).forEach(function(c){
+        var cn=c.localName;
+        if(cn==='element'){var nm=c.getAttribute('name')||qLocal(c.getAttribute('ref'));if(nm)ct.kids[nm]=c;}
+        else if(cn==='choice'||cn==='sequence'||cn==='all')groupModel(ct,c,seen);
+        else if(cn==='group')groupRef(ct,c,seen);
+        else if(cn==='any'){ct.anyKids=true;note('any');}
+        else if(cn!=='annotation')note(cn);
+      });
+    }
+    function groupRef(ct,c,seen){
+      var nm=qLocal(c.getAttribute('ref')),d=S.gGrp[nm];
+      if(!d){note('unbekannte group '+nm);ct.anyKids=true;return;}
+      if(seen['g:'+nm])return;seen['g:'+nm]=1;
+      xsKids(d).forEach(function(x){
+        var xn=x.localName;
+        if(xn==='choice'||xn==='sequence'||xn==='all')groupModel(ct,x,seen);
+        else if(xn!=='annotation')note(xn);
+      });
+    }
+    /* simpleContent / complexContent mit extension oder restriction: Basistyp übernehmen, dann ergänzen */
+    function derive(ct,c,isSimple,seen){
+      var d=xsKids(c,'extension')[0],isExt=true;
+      if(!d){d=xsKids(c,'restriction')[0];isExt=false;}
+      if(!d||(isSimple&&!isExt)){note(isSimple?'simpleContent mit restriction':'complexContent');ct.loose=true;return;}
+      if(c.getAttribute('mixed')==='true')ct.mixed=true;
+      var q=d.getAttribute('base')||'',r=refKind(q,d),bt=r.u?S.gType[r.u]:null,bct=null;
+      if(r.u&&!bt){note('unbekannter Typ '+r.u);ct.loose=true;return;}
+      if(bt&&bt.localName==='complexType')bct=complexByNode(bt);
+      if(bct){
+        Object.keys(bct.attrs).forEach(function(k){ct.attrs[k]=bct.attrs[k];});
+        if(isExt||isSimple){
+          Object.keys(bct.kids).forEach(function(k){ct.kids[k]=bct.kids[k];});
+          ct.anyKids=ct.anyKids||bct.anyKids;
+        }
+        ct.mixed=ct.mixed||bct.mixed;ct.loose=ct.loose||bct.loose;ct.anyAttr=ct.anyAttr||bct.anyAttr;
+        if(bct.simple)ct.simple=bct.simple;
+        if(!isExt)note('complexContent mit restriction (vereinfacht: Basisattribute bleiben, Kinder nur wie hier angegeben)');
+      }else if(isSimple){
+        ct.simple=simpleByRef(q,d);
+      }else if(r.b!=='anyType'){
+        note('Basistyp xs:'+r.b+' in complexContent');ct.loose=true;return;
+      }
+      fillCt(ct,d,seen);
+    }
+    function fillCt(ct,node,seen){
+      xsKids(node).forEach(function(c){
+        var cn=c.localName;
+        if(cn==='attribute')addAttr(ct,c);
+        else if(cn==='attributeGroup')attrGroup(ct,c,seen);
+        else if(cn==='choice'||cn==='sequence'||cn==='all')groupModel(ct,c,seen);
+        else if(cn==='group')groupRef(ct,c,seen);
+        else if(cn==='anyAttribute'){note('anyAttribute');ct.anyAttr=true;}
+        else if(cn==='simpleContent')derive(ct,c,true,seen);
+        else if(cn==='complexContent')derive(ct,c,false,seen);
+        else if(cn!=='annotation')note(cn);
+      });
+    }
+    function declOf(node){
+      var ref=node.getAttribute('ref');
+      if(ref){var g=S.gEl[qLocal(ref)];if(!g){note('unbekanntes Element '+qLocal(ref));return {kind:'any'};}node=g;}
+      if(memoD.has(node))return memoD.get(node);
+      var d,t=node.getAttribute('type'),ct=xsKids(node,'complexType')[0],st=xsKids(node,'simpleType')[0];
+      if(t){
+        var r=refKind(t,node);
+        if(r.b)d=r.b==='anyType'?{kind:'any'}:{kind:'simple',chk:builtinCheck(r.b)};
+        else{
+          var tn=S.gType[r.u];
+          if(!tn){note('unbekannter Typ '+r.u);d={kind:'any'};}
+          else if(tn.localName==='complexType')d={kind:'complex',ct:complexByNode(tn)};
+          else d={kind:'simple',chk:simpleByNode(tn)};
+        }
+      }else if(ct)d={kind:'complex',ct:complexByNode(ct)};
+      else if(st)d={kind:'simple',chk:simpleByNode(st)};
+      else d={kind:'any'};
+      memoD.set(node,d);return d;
+    }
+    S.decl=declOf;
+    // alles einmal auflösen, damit die Hinweise vollständig sind
+    Array.prototype.forEach.call(dx.getElementsByTagNameNS(XS,'element'),function(e){if(e.getAttribute('name')||e.getAttribute('ref'))declOf(e);});
+    Object.keys(S.gType).forEach(function(n){var t=S.gType[n];if(t.localName==='complexType')complexByNode(t);else simpleByNode(t);});
+    var refs={};
+    Array.prototype.forEach.call(dx.getElementsByTagNameNS(XS,'element'),function(e){var r=e.getAttribute('ref');if(r)refs[qLocal(r)]=1;});
+    S.roots=Object.keys(S.gEl).filter(function(n){return !refs[n];});
+    if(!S.roots.length)S.roots=Object.keys(S.gEl);
+    S.nEl=Object.keys(S.gEl).length;
+    return {S:S};
+  }
+
+  /* focus (optional): Liste von Kindelementen der Wurzel; nur Fehler an diesen Elementen werden gemeldet */
+  function validateDoc(S,root,focus){
+    var errs=[],total=0,visited=0,on=!focus;
+    function err(p,m){if(!on)return;total++;if(errs.length<500)errs.push({path:p,msg:m});}
+    if(!S.gEl[root.localName]){err('/'+root.nodeName,'Wurzelelement <'+root.nodeName+'> ist im Schema nicht deklariert.');return {errors:errs,total:total,visited:1};}
+    if(S.roots.indexOf(root.localName)<0)err('/'+root.nodeName,'Wurzelelement <'+root.nodeName+'> ist im Schema nicht als Wurzel vorgesehen (erwartet: '+S.roots.join(', ')+').');
+    function walk(el,d,path){
+      visited++;
+      if(d.kind==='any')return;
+      var kids=[],hasText=false,i,n,cnt={},idx={};
+      for(i=0;i<el.childNodes.length;i++){
+        n=el.childNodes[i];
+        if(n.nodeType===1){kids.push(n);cnt[n.localName]=(cnt[n.localName]||0)+1;}
+        else if((n.nodeType===3||n.nodeType===4)&&n.nodeValue.trim())hasText=true;
+      }
+      function kidPath(k){var nm=k.localName;idx[nm]=(idx[nm]||0)+1;return path+'/'+nm+(cnt[nm]>1?'['+idx[nm]+']':'');}
+      var attrs=Array.prototype.filter.call(el.attributes,function(a){return a.name!=='xmlns'&&a.name.indexOf('xmlns:')!==0&&a.namespaceURI!==XSI;});
+      var m;
+      if(d.kind==='simple'){
+        attrs.forEach(function(a){err(path+'/@'+a.name,'Attribut "'+a.name+'" ist hier nicht erlaubt (Element hat einfachen Typ).');});
+        kids.forEach(function(k){err(kidPath(k),'Element <'+k.localName+'> ist hier nicht erlaubt (nur Text erwartet).');});
+        m=d.chk.check(el.textContent);if(m)err(path,m);
+        return;
+      }
+      var ct=d.ct;
+      if(!ct.loose){
+        attrs.forEach(function(a){
+          var def=ct.attrs[a.name];
+          if(!def){if(!ct.anyAttr)err(path+'/@'+a.name,'Attribut "'+a.name+'" ist hier nicht erlaubt.');return;}
+          if(def.use==='prohibited'){err(path+'/@'+a.name,'Attribut "'+a.name+'" ist verboten.');return;}
+          var mm=def.chk.check(a.value);if(mm)err(path+'/@'+a.name,'Attribut "'+a.name+'": '+mm);
+        });
+        Object.keys(ct.attrs).forEach(function(k){if(ct.attrs[k].use==='required'&&!el.hasAttribute(k))err(path,'Pflichtattribut "'+k+'" fehlt.');});
+      }
+      if(ct.simple){
+        kids.forEach(function(k){err(kidPath(k),'Element <'+k.localName+'> ist hier nicht erlaubt (nur Text erwartet).');});
+        m=ct.simple.check(el.textContent);if(m)err(path,m);
+        return;
+      }
+      if(ct.loose)return;
+      if(hasText&&!ct.mixed)err(path,'Text ist hier nicht erlaubt: "'+shortVal(el.textContent.trim())+'".');
+      kids.forEach(function(k){
+        var kp=kidPath(k),node=ct.kids[k.localName],prev=on;
+        if(focus&&el===root)on=focus.indexOf(k)>=0;
+        if(!node){
+          if(!ct.anyKids){
+            var al=Object.keys(ct.kids);
+            err(kp,'Element <'+k.localName+'> ist hier nicht erlaubt'+(al.length?' (erlaubt: '+al.slice(0,12).join(', ')+(al.length>12?', …':'')+')':' (kein Kindelement erlaubt)')+'.');
+          }
+        }else walk(k,S.decl(node),kp);
+        on=prev;
+      });
+    }
+    walk(root,S.decl(S.gEl[root.localName]),'/'+root.nodeName);
+    return {errors:errs,total:total,visited:visited};
+  }
+
+  /* --- Tab „XSD“ --- */
+  var schema=null,schemaName='',lastRes=null;
+  var xsdEl={info:document.getElementById('xsdinfo'),notes:document.getElementById('xsdnotes'),res:document.getElementById('xsdres'),
+    run:document.getElementById('xsdrun'),auto:document.getElementById('xsdauto'),file:document.getElementById('xsdfile'),
+    ghname:document.getElementById('xsdghname')};
+  function notesText(){
+    if(!schema)return '';
+    var ks=Object.keys(schema.notes);
+    return ks.length?ks.map(function(k){return k+' ('+schema.notes[k]+'×)';}).join(', '):'';
+  }
+  function renderXsd(){
+    updateTplButton();
+    xsdEl.info.textContent=schema?'Schema: '+schemaName+' ('+schema.nEl+' globale Elemente, Wurzel: '+schema.roots.join(', ')+')':'Kein Schema geladen. Wähle eine .xsd-Datei oder ziehe sie auf die Seite.';
+    xsdEl.run.disabled=!schema;
+    xsdEl.notes.textContent='';
+    var nt=notesText();
+    if(nt){var p=document.createElement('p');p.className='note';p.textContent='Nicht geprüft oder vereinfacht: '+nt+'.';xsdEl.notes.appendChild(p);}
+    xsdEl.res.textContent='';
+    if(!lastRes)return;
+    var h=document.createElement('div');
+    h.className='status '+(lastRes.total?'err':'ok');
+    h.textContent=lastRes.total?lastRes.total+' Fehler ('+lastRes.visited+' Elemente geprüft)'+(lastRes.total>lastRes.errors.length?', angezeigt: die ersten '+lastRes.errors.length:'')+'.':'Gültig: '+lastRes.visited+' Elemente geprüft, keine Fehler.';
+    xsdEl.res.appendChild(h);
+    if(!lastRes.errors.length)return;
+    var ul=document.createElement('ul');ul.className='errlist';
+    lastRes.errors.forEach(function(e){
+      var li=document.createElement('li'),b=document.createElement('button'),pth=document.createElement('code'),msg=document.createElement('span');
+      b.type='button';b.title='Pfad in die Abfragezeile übernehmen';
+      pth.textContent=e.path;msg.textContent=e.msg;
+      b.appendChild(pth);b.appendChild(msg);
+      b.onclick=function(){q.value=e.path;q.focus();};
+      li.appendChild(b);ul.appendChild(li);
+    });
+    xsdEl.res.appendChild(ul);
+  }
+  /* Meldungen zur Schema-Prüfung erscheinen nur im Tab „XSD“, nicht im Chat */
+  function xsdMsg(text,err){
+    var m=document.getElementById('xsdmsg');m.textContent=text||'';m.className='status'+(text&&err?' err':'');
+    if(text&&err)selectTab(5);
+  }
+  function setSchema(name,text,silent){
+    var r=parseXsd(text);
+    if(r.error){xsdMsg('Fehler im Schema '+name+': '+r.error,true);return false;}
+    schema=r.S;schemaName=name;lastRes=null;
+    try{localStorage.setItem('diarychat.xsd',JSON.stringify({name:name,text:text}));}catch(e){}
+    renderXsd();xsdMsg('');
+    return true;
+  }
+  function validateNow(auto){
+    if(!schema){if(!auto)xsdMsg('Kein Schema geladen. Lade zuerst eine .xsd-Datei.',true);return;}
+    if(!doc){if(!auto)xsdMsg('Kein XML geladen. Importiere zuerst eine Datei.',true);return;}
+    xsdMsg('');lastRes=validateDoc(schema,doc.documentElement);renderXsd();
+  }
+  function autoValidate(){if(xsdEl.auto.checked&&schema&&doc)validateNow(true);}
+  function routeFiles(list){
+    var all=Array.prototype.slice.call(list),xs=all.filter(function(f){return /\.xsd$/i.test(f.name);}),rest=all.filter(function(f){return !/\.xsd$/i.test(f.name);});
+    if(xs.length)readText(xs[0]).then(function(t){if(setSchema(xs[0].name,t))autoValidate();});
+    if(rest.length)load(rest);
+  }
+  document.getElementById('xsdload').onclick=function(){xsdEl.file.click();};
+  xsdEl.file.onchange=function(){var f=xsdEl.file.files[0];xsdEl.file.value='';if(f)readText(f).then(function(t){if(setSchema(f.name,t))autoValidate();});};
+  document.getElementById('xsdgh').onclick=async function(){
+    var name=xsdEl.ghname.value.trim();
+    if(!name||/[\/\\]/.test(name)){xsdMsg('Bitte einen Dateinamen ohne Schrägstriche angeben.',true);return;}
+    try{var t=await ghRead(ghPath(name));if(setSchema(name,t))autoValidate();}
+    catch(e){xsdMsg('Schema konnte nicht aus GitHub geladen werden: '+e.message,true);}
+  };
+  document.getElementById('xsdclear').onclick=function(){
+    schema=null;schemaName='';lastRes=null;
+    try{localStorage.removeItem('diarychat.xsd');}catch(e){}
+    renderXsd();xsdMsg('');
+  };
+  xsdEl.run.onclick=function(){validateNow(false);};
+  xsdEl.auto.onchange=function(){
+    try{localStorage.setItem('diarychat.xsdauto',xsdEl.auto.checked?'1':'0');}catch(e){}
+    if(xsdEl.auto.checked)autoValidate();
+  };
+  try{xsdEl.auto.checked=localStorage.getItem('diarychat.xsdauto')==='1';}catch(e){}
+  try{
+    var savedXsd=JSON.parse(localStorage.getItem('diarychat.xsd')||'null');
+    if(savedXsd&&savedXsd.text)setSchema(savedXsd.name,savedXsd.text,true);
+  }catch(e){}
+  renderXsd();
+
+})();
+</script>
+</body>
+</html>
+
+</body></html>
